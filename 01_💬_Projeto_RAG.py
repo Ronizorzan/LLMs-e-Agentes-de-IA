@@ -6,7 +6,7 @@ from joblib import dump, load
 load_dotenv()
 
 #Configuração do Layout
-st.set_page_config(page_title="Auto-atendimento")
+st.set_page_config(page_title="Auto-Atendimento - PS5", page_icon="🎮")
 st.subheader("Chat Assistente Virtual - PS5")
 
 
@@ -27,7 +27,7 @@ if "retriever" not in st.session_state:
 if not st.session_state.chat_started:
     if st.button("Iniciar atendimento",
                               help="Clique no botão para iniciar o atendimento"):
-        with st.spinner("Carregando documentos... Isso pode levar um minuto"):
+        with st.spinner("Carregando os manuais do console... Isso pode levar alguns segundos... "):
             st.session_state.retriever = process_pdf("Projects/functions_and_documents/")
             st.session_state.chat_started = True
             st.rerun()
@@ -40,7 +40,8 @@ chat_input = st.chat_input("Digite sua mensagem aqui...")
 
 # Exibe a primeira mensagem no chat
 if "chat_history" not in st.session_state:
-    st.session_state.chat_history = [AIMessage("Olá! Eu sou seu assistente virtual. Como posso te ajudar?")]
+    st.session_state.chat_history = [AIMessage("Olá! Eu sou seu assistente virtual. "
+                                               "Posso esclarecer todas as suas dúvidas sobre o console PS5!")]
 
 for message in st.session_state.chat_history:
     if isinstance(message, AIMessage):
