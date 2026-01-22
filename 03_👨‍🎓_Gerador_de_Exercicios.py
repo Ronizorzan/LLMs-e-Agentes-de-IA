@@ -1,9 +1,11 @@
 import streamlit as st
 from functions_and_documents.Gerador_de_exercicios.functions import *
+from functions_and_documents.ProjetoRAG.functions import markdown
 from dotenv import load_dotenv
 load_dotenv()
 
 st.set_page_config(page_title="Geração de Exercícios", layout="centered")
+st.markdown(markdown, unsafe_allow_html=True)
 
 
 st.sidebar.header("Configurações do Modelo")
@@ -18,7 +20,8 @@ with st.form("formulario"):
   generate_btn = st.form_submit_button("Gerar Exercícios")
 
 if generate_btn:
-  prompt = build_prompt(topic, quantity, level, interests)
-  llm = load_llm(id_model, temperature)
-  res = llm.invoke(prompt)
-  st.markdown(format_res(res, return_thinking=True))
+  with st.spinner("Gerando exercícios...")
+    prompt = build_prompt(topic, quantity, level, interests)
+    llm = load_llm(id_model, temperature)
+    res = llm.invoke(prompt)
+    st.markdown(format_res(res, return_thinking=True))

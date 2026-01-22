@@ -13,7 +13,7 @@ Os projetos foram desenvolvidos para serem **facilmente adaptáveis** a diferent
 ### [`functions_and_documents`](functions_and_documents)
 Contém funções auxiliares e documentos adicionais, organizados por projeto para garantir controle e clareza.
 
-- [`functions_and_documents/Gerador_de_Conteudo/functions.py`](functions_and_documents/Gerador_deConteudo/functions.py)  
+- [`functions_and_documents/Gerador_de_Conteudo/functions.py`](functions_and_documents/Gerador_de_Conteudo/functions.py)  
   Funções utilizadas no projeto de **geração de conteúdo**.
 
 - [`functions_and_documents/ProjetoRAG/functions.py`](functions_and_documents/ProjetoRAG/functions.py)  
@@ -47,7 +47,7 @@ Projetos prontos para execução via arquivos `.py`.
 - Criação de exercícios personalizados para estudantes de diversas áreas.
 - Interface pronta para e altamente personalizável com possibilidade de exportações de documentos.
 - Possibilidade de configurar: nível, matéria, quantidade de exercícios, interesses, etc
-- Resultado: **Exercíos personalizados baseados em documentos recuperados através de técnicas RAG.** 
+- Resultado: **Exercícios personalizados baseados em documentos recuperados através de técnicas RAG.** 
 
 ## ✨ Diferenciais
 - Projetos modulares e reutilizáveis.  

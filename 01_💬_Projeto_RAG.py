@@ -8,6 +8,7 @@ load_dotenv()
 #Configuração do Layout
 st.set_page_config(page_title="Auto-Atendimento - PS5", page_icon="🎮")
 st.subheader("Chat Assistente Virtual - PS5")
+st.sidebar.markdown(markdown, unsafe_allow_html=True)
 
 
 # Carregamento da LLM

@@ -1,0 +1,19 @@
+[project]
+name = "Solucoes-com-LLMs"
+version = "0.1.0"
+description = "LLMs e Agentes de IA com Langchain e LangGraph"
+authors = [
+    {name = "Ronivan", email = "ronizorzan1992@gmail.com"},
+]
+dependencies = []
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+
+[tool.pdm]
+distribution = true

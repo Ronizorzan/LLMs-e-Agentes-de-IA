@@ -1,4 +1,11 @@
+import os
+
 from langchain_groq import ChatGroq
+import qdrant_client
+from langchain_qdrant import QdrantVectorStore
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import Distance, VectorParams
+
 
 def load_llm(id_model="openai/gpt-oss-120b", temperature=0.7):
     llm = ChatGroq(
@@ -39,3 +46,16 @@ Exemplo de estrutura:
    Explicação: [Passo a passo detalhado]
 """
     return prompt
+
+def config_retriever(docs, embeddings, qdrant_collections="projeto_educacao"):
+    vector_store = QdrantVectorStore.from_documents(
+        documents=docs,
+        embedding=embeddings,
+        url=os.getenv("QDRANT_HOST"),
+        api_key=os.getenv("QDRANT_API_KEY"),
+        prefer_grcp=True,
+        collection_name=qdrant_collections
+    )
+    return vector_store.as_retriever()
+
+

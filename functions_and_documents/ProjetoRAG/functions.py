@@ -128,8 +128,8 @@ def chat_llm_streamlit(rag_chain, chat_input):
 
     return response
 
-    # Rodapé na barra lateral com as informações do desenvolvedor
-st.sidebar.markdown("""
+# Rodapé na barra lateral com as informações do desenvolvedor
+markdown = """
 <style>
 .footer {
     background-color: #f8f9fa;
@@ -178,5 +178,4 @@ st.sidebar.markdown("""
     </a>
 
 </div>
-""", unsafe_allow_html=True)
-
+"""
