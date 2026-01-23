@@ -3,9 +3,16 @@ from  langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_classic.chains import create_history_aware_retriever, create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
+from langchain_qdrant import QdrantVectorStore
+from langchain_classic.vectorstores import Qdrant
+from qdrant_client import QdrantClient
+from qdrant_client.http.models import Distance, VectorParams
+from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import  FAISS
+from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage, AIMessage
+import os
 import  streamlit as st
 from pathlib import Path
 
@@ -23,45 +30,40 @@ def extract_text_pdf(pdf_path):
 
 
 # =================== Processamento dos documentos com embedding e indexação ======================================
-def process_pdf(folder_path=".", chunk_size=1000, chunk_overlap=100):
-    """Lista todos os arquivos em formato
-    pdf em uma determinada pasta.
-    Divide, aplica embedding e indexação dos documentos para maior eficiência.
-    """
-
-    # Extração e concatenação dos textos
+def process_pdf(folder_path=".", chunk_size=500, chunk_overlap=50):
     path = Path(folder_path)
     pdf_files_path = [paths for paths in path.glob("*pdf")]
     pdf_texts = [extract_text_pdf(path) for path in pdf_files_path]
 
-    # Divisão dos textos em pedaços menores
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=chunk_size,
-        chunk_overlap=chunk_overlap)
+        chunk_overlap=chunk_overlap
+    )
+    chunks = [chunk for text in pdf_texts for chunk in text_splitter.split_text(text)]
 
-    chunks = []
-    for docs in pdf_texts:
-        chunks.extend(text_splitter.split_text(docs))
-
-    # Embedding dos documentos
+    #embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
     embedding_model = "BAAI/bge-m3"
-    embeddings = HuggingFaceEmbeddings(model=embedding_model)
+    embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
 
-    # Indexação e recuperação dos documentos
-    if Path("functions_and_documents/index_ps5").exists():
-        vectorstore = FAISS.load_local("functions_and_documents/index_ps5",
-                                       embeddings, allow_dangerous_deserialization=True)
-        # st.success("Reaproveitando documentos carregados previamente...")
-
-    else:  # Caso contrário, cria os índices
-        vectorstore = FAISS.from_texts(chunks, embeddings)
-        vectorstore.save_local("functions_and_documents/index_ps5")
-
-    retriever = vectorstore.as_retriever(
-        search_type="mmr", search_kwargs={"k": 4, "fetch_k": 10}
+    client = QdrantClient(url=os.getenv("QDRANT_HOST"), api_key=os.getenv("QDRANT_API_KEY"))
+    client.recreate_collection(
+        collection_name="projeto_rag_ps5",
+        vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
     )
 
+    
+    vectorstore = QdrantVectorStore.from_texts(
+        url=os.getenv("QDRANT_HOST"),
+        api_key=os.getenv("QDRANT_API_KEY"),
+        texts=chunks,
+        embedding=embeddings,
+        prefer_grpc=True,
+        collection_name="projeto_rag_ps5"
+    )
+
+    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 7, "fetch_k": 10})
     return retriever
+
 
 def config_rag_chain(llm, retriever):
     context_q_system_prompt = ("""Given the following chat history and the follow-up question
@@ -84,13 +86,12 @@ def config_rag_chain(llm, retriever):
         llm=llm, retriever=retriever, prompt=context_q_prompt
     )
 
-    system_prompt = """Você é um assistente virtual prestativo e está
-     respondendo perguntas gerais sobre os serviços de uma empresa.
-  Use os seguintes pedaços de contexto recuperado para responder à pergunta.
-  Se você não sabe a resposta, apenas comente que não sabe dizer com certeza, e passe os dados de contato, se disponíveis.
-  Mas caso seja uma dúvida muito comum, pode sugerir como alternativa uma solução possível.
-  Mantenha a resposta concisa.
-  Responda em português. \n\n"""
+    system_prompt = """You are a helpful virtual assistant answering general questions about the video-game console PS5.  
+        Use the provided context snippets to guide your response.  
+        If you are unsure of the answer, simply say you cannot confirm and share the available contact details.  
+        For very common questions, you may suggest a possible solution as an alternative.  
+        Keep your response concise.  
+        Reply in Portuguese.\n\n"""
 
     qa_prompt = ChatPromptTemplate.from_messages([
         ("system", system_prompt),

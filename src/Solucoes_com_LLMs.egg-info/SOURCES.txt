@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/Solucoes_com_LLMs.egg-info/PKG-INFO
+src/Solucoes_com_LLMs.egg-info/SOURCES.txt
+src/Solucoes_com_LLMs.egg-info/dependency_links.txt
+src/Solucoes_com_LLMs.egg-info/requires.txt
+src/Solucoes_com_LLMs.egg-info/top_level.txt
+src/solucoes_com_llms/__init__.py

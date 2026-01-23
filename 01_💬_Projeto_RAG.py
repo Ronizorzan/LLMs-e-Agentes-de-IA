@@ -2,7 +2,6 @@ from functions_and_documents.ProjetoRAG.functions import *
 import streamlit as st
 from langchain_groq import ChatGroq
 from dotenv import load_dotenv
-from joblib import dump, load
 load_dotenv()
 
 #Configuração do Layout
@@ -12,7 +11,7 @@ st.sidebar.markdown(markdown, unsafe_allow_html=True)
 
 
 # Carregamento da LLM
-llm = ChatGroq(model="openai/gpt-oss-120b",
+llm = ChatGroq(model="openai/gpt-oss-20b",
                timeout=None,
                max_tokens=None,
                max_retries=2,
@@ -29,7 +28,7 @@ if not st.session_state.chat_started:
     if st.button("Iniciar atendimento",
                               help="Clique no botão para iniciar o atendimento"):
         with st.spinner("Carregando os manuais do console... Isso pode levar alguns segundos... "):
-            st.session_state.retriever = process_pdf("Projects/functions_and_documents/")
+            st.session_state.retriever = process_pdf("functions_and_documents/")
             st.session_state.chat_started = True
             st.rerun()
     st.markdown("Pressione o botão para iniciar seu atendimento...")
