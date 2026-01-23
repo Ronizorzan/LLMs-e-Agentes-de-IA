@@ -29,7 +29,9 @@ Projetos prontos para execução via arquivos `.py`.
 - Modelo que responde a perguntas e dúvidas de clientes com base em documentos da empresa.  
 - Respostas rápidas e contextualizadas a partir de PDFs.  
 - Estudo de caso: manual do **PlayStation 5**.  
-  - [📖 Manual PS5](https://www.playstation.com/content/dam/global_pdc/pt-br/corporate/support/manuals/ps5-docs/2100ab/CFI-21XX_PS5_Instruction_Manual_Web$pt-br.pdf)
+- [📖 Manual do Console aqui](https://www.playstation.com/content/dam/global_pdc/pt-br/corporate/support/manuals/ps5-docs/2100ab/CFI-21XX_PS5_Instruction_Manual_Web$pt-br.pdf)
+  
+  ![Interface_Chat_RAG](functions_and_documents\Interface_Streamlit\Interface_Chat_RAG.gif)
 
 ---
 

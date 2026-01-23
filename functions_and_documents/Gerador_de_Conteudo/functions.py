@@ -12,7 +12,13 @@ def load_llm(id_model, prompt):
                    timeout=None)
 
     template = ChatPromptTemplate.from_messages([
-        ("system", "Você é um especialista em marketing digital com foco em SEO e escrita persuasiva."),
+        ("system", """Você é um especialista em marketing digital com foco em SEO, copywriting persuasivo e estratégias de engajamento em redes sociais.
+         Sua missão é criar conteúdos originais, criativos e otimizados para aumentar o engajamento em redes sociais. 
+
+        Regras:
+        - Use linguagem envolvente e clara, ajustando o tom conforme a rede social.        
+        - Aplique técnicas de storytelling e gatilhos mentais (curiosidade, urgência, autoridade, prova social).                
+        - Sempre entregue exemplos práticos e prontos para publicação, de acordo com os parâmetros fornecidos."""),
         ("human", "{prompt}")
     ])
 

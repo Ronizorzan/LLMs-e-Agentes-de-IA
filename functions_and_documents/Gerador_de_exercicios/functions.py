@@ -7,7 +7,7 @@ from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
 
 
-def load_llm(id_model="openai/gpt-oss-120b", temperature=0.7):
+def load_llm(id_model="openai/gpt-oss-120b", temperature=0.5):
     llm = ChatGroq(
         model=id_model,
         temperature=temperature,
@@ -57,5 +57,18 @@ def config_retriever(docs, embeddings, qdrant_collections="projeto_educacao"):
         collection_name=qdrant_collections
     )
     return vector_store.as_retriever()
+
+
+def get_retriever(qdrant_collection, embeddings):
+    vector_store = QdrantVectorStore.from_existing_collection(
+        embedding=embeddings,
+        url=os.getenv("QDRANT_HOST"),
+        api_key=os.getenv("QDRANT_API_KEY"),
+        collection_name=qdrant_collection
+    )
+    return vector_store.as_retriever(
+        search_type="mmr",
+        search_kwargs={"k": 6, "fetch_k": 10}
+    )
 
 

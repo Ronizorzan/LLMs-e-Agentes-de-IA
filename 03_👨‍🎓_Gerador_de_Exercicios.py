@@ -20,7 +20,7 @@ with st.form("formulario"):
   generate_btn = st.form_submit_button("Gerar Exercícios")
 
 if generate_btn:
-  with st.spinner("Gerando exercícios...")
+  with st.spinner("Gerando exercícios..."):
     prompt = build_prompt(topic, quantity, level, interests)
     llm = load_llm(id_model, temperature)
     res = llm.invoke(prompt)
