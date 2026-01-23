@@ -1,10 +1,13 @@
 # 🚀 Projetos com LLMs
 
-Este portfólio reúne projetos que utilizam **Modelos de Linguagem (LLMs)** para resolver diferentes problemas de negócio.  
+*Este portfólio reúne projetos que utilizam **Modelos de Linguagem (LLMs)** para resolver diferentes problemas de negócio.*  
+
 O repositório está em constante evolução: novas funções e páginas serão adicionadas gradualmente.
 
-Cada arquivo representa uma solução prática para desafios comuns enfrentados por empresas.  
-Os projetos foram desenvolvidos para serem **facilmente adaptáveis** a diferentes contextos, bastando ajustes simples em lógicas, prompts e dados.
+*Cada arquivo representa uma solução prática para desafios comuns enfrentados por empresas.*
+
+*Os projetos foram desenvolvidos para serem **facilmente adaptáveis** 
+a diferentes contextos, bastando ajustes simples em lógicas, prompts e dados.*
 
 ---
 
@@ -19,6 +22,9 @@ Contém funções auxiliares e documentos adicionais, organizados por projeto pa
 - [`functions_and_documents/ProjetoRAG/functions.py`](functions_and_documents/ProjetoRAG/functions.py)  
   Funções utilizadas no projeto **RAG (Retrieval-Augmented Generation)**.
 
+- [`functions_and_documents/Gerador_de_exercicios/functions.py`](functions_and_documents/Gerador_de_exercicios/functions.py)
+    Funções utilizadas no projeto de **geração de exercícios com RAG.**
+
 ---
 
 ### [`Projects`](Projects)
@@ -31,7 +37,7 @@ Projetos prontos para execução via arquivos `.py`.
 - Estudo de caso: manual do **PlayStation 5**.  
 - [📖 Manual do Console aqui](https://www.playstation.com/content/dam/global_pdc/pt-br/corporate/support/manuals/ps5-docs/2100ab/CFI-21XX_PS5_Instruction_Manual_Web$pt-br.pdf)
   
-  ![Interface_Chat_RAG](functions_and_documents\Interface_Streamlit\Interface_Chat_RAG.gif)
+![Interface_Chat_RAG](functions_and_documents\Interface_Streamlit\Interface_Chat_RAG.gif)
 
 ---
 
