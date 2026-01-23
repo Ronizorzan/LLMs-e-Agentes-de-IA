@@ -41,27 +41,39 @@ def process_pdf(folder_path=".", chunk_size=500, chunk_overlap=50):
     )
     chunks = [chunk for text in pdf_texts for chunk in text_splitter.split_text(text)]
 
-    #embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"))
-    embedding_model = "BAAI/bge-m3"
+    embeddings = OpenAIEmbeddings(openai_api_key=os.getenv("OPENAI_API_KEY"), model="text-embedding-ada-002")
+    #embedding_model = "BAAI/bge-m3"
+    embedding_model = "sentence-transformers/all-MiniLM-L6-v2"
     embeddings = HuggingFaceEmbeddings(model_name=embedding_model)
 
-    client = QdrantClient(url=os.getenv("QDRANT_HOST"), api_key=os.getenv("QDRANT_API_KEY"))
-    client.recreate_collection(
-        collection_name="projeto_rag_ps5",
-        vectors_config=VectorParams(size=1024, distance=Distance.COSINE)
-    )
-
     
-    vectorstore = QdrantVectorStore.from_texts(
-        url=os.getenv("QDRANT_HOST"),
-        api_key=os.getenv("QDRANT_API_KEY"),
-        texts=chunks,
-        embedding=embeddings,
-        prefer_grpc=True,
-        collection_name="projeto_rag_ps5"
-    )
+    try: # Tenta criar o vetor no Qdrant, se já existir, apenas usa o existente
+        client = QdrantClient(url=os.getenv("QDRANT_HOST"), api_key=os.getenv("QDRANT_API_KEY"))
+        client.recreate_collection(
+        collection_name="projeto_rag_ps5",
+        vectors_config=VectorParams(size=384, distance=Distance.COSINE))
 
-    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 7, "fetch_k": 10})
+        vectorstore = QdrantVectorStore.from_texts(
+            url=os.getenv("QDRANT_HOST"),
+            api_key=os.getenv("QDRANT_API_KEY"),
+            texts=chunks,
+            embedding=embeddings,
+            prefer_grpc=True,
+            force_recreate=True,
+            collection_name="projeto_rag_ps5"
+        )
+    
+    except Exception:
+        vectorstore = QdrantVectorStore(
+            client=client,
+            collection_name="projeto_rag_ps5",
+            embedding=embeddings
+        )  
+
+        
+
+
+    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 10, "fetch_k": 15})
     return retriever
 
 

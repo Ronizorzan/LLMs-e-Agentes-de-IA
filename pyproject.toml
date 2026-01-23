@@ -7,7 +7,7 @@ authors = [
 ]
 dependencies = ["langchain>=1.2.6", "langchain-community>=0.4.1", "langchain-classic>=1.0.1",
     "langchain-core>=1.2.7", "langchain-docling>=2.0.0", "docling>=2.69.1", "streamlit>=1.53.0",
-    "langchain-huggingface>=1.2.0", "joblib>=1.5.3", "sentence-transformers>=5.2.0", "langchain-qdrant>=1.1.0", "langchain-groq>=1.1.1"]
+    "langchain-huggingface>=1.2.0", "joblib>=1.5.3", "sentence-transformers>=5.2.0", "langchain-qdrant>=1.1.0", "langchain-groq>=1.1.1", "langchain-openai>=1.1.7", "pymupdf>=1.26.7"]
 requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "MIT"}

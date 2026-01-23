@@ -4,3 +4,7 @@
 .idea
 .pdm-python
 pdm.lock
+.ipynb_checkpoints/
+__pycache__/
+tests/
+src/
