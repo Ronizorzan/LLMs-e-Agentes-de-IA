@@ -1,0 +1,24 @@
+[theme]
+# Cor Base
+base = "dark"
+
+# Cor de destaque (Botões, seletores e detalhes)
+primaryColor = "#4CAF50"
+
+# Fundo principal da página (Preto profundo)
+backgroundColor = "#111010"
+
+# Fundo das barras laterais e cards (Cinza escuro sólido para contraste)
+secondaryBackgroundColor = "#1C1C1C"
+
+# Texto principal (Cinza claro/Branco para legibilidade técnica)
+textColor = "#E0E0E0"
+
+# Fonte moderna
+font = "sans serif"
+
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = true
+

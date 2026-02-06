@@ -1,7 +1,7 @@
 # Importações necessárias
 import streamlit as st
 from dotenv import load_dotenv
-from Projects.functions_and_documents.Gerador_de_Conteudo.functions import load_llm
+from functions_and_documents.Gerador_de_Conteudo.functions import load_llm
 
 st.set_page_config(page_title="🤖 Gerador de Conteúdo", layout="centered")
 

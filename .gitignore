@@ -8,3 +8,8 @@ pdm.lock
 __pycache__/
 tests/
 src/
+__pycache__/
+*.csv
+*.pdf
+.idea/
+tests/

@@ -143,44 +143,12 @@ def chat_llm_streamlit(rag_chain, chat_input):
 
 # Rodapé na barra lateral com as informações do desenvolvedor
 markdown = """
-<style>
-.footer {
-    background-color: #f8f9fa;
-    padding: 20px 25px;
-    border-radius: 10px;
-    border-left: 9px solid #972328;
-    text-align: center;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin-top: 20px;
-    color: #343a40;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-.footer p {
-    font-size: 16px;
-    margin-bottom: 15px;
-}
-.footer a {
-    margin: 0 12px;
-    display: inline-block;
-}
-.footer img {
-    height: 36px;
-    width: 36px;
-    border-radius: 6px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-.footer img:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 8px rgba(151, 35, 40, 0.4);
-}
-</style>
-
 <div class="footer">
     <p><strong>Desenvolvido por: Ronivan</strong></p>
     <a href="http://107.22.129.114:5678/webhook/4091fa09-fb9a-4039-9411-7104d213f601/chat" target="_blank">
         <img src="https://cdn-icons-gif.flaticon.com/12205/12205168.gif" alt="Film Reel Icon">
     </a>
-    <a href="https://github.com/Ronizorzan/Projeto-LinRecom" target="_blank">
+    <a href="https://github.com/Ronizorzan/LLMs-e-Agentes-de-IA" target="_blank">
         <img src="https://cdn-icons-png.flaticon.com/128/2504/2504911.png" alt="GitHub">
     </a>
     <a href="https://www.linkedin.com/in/ronivan-zorzan-barbosa" target="_blank">
