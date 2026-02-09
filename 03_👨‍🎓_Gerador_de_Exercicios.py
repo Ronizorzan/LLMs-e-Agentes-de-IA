@@ -1,10 +1,8 @@
 import streamlit as st
 from functions_and_documents.Gerador_de_exercicios.functions import *
 from functions_and_documents.ProjetoRAG.functions import markdown
-from langchain_huggingface import HuggingFaceEmbeddings
 import tempfile
 from dotenv import load_dotenv
-from datetime import datetime
 load_dotenv()
 
 st.set_page_config(page_title="Geração de Exercícios", layout="wide")
@@ -26,20 +24,19 @@ with st.sidebar:
                                 help="""Valores baixos = respostas mais objetivas\
                                 \nvalores altos = respostas mais criativas""" )
     
-    with st.expander("✉️ Contato", expanded=False):
+    with st.expander("Contato e Assistência", expanded=False, icon="✉️"):
         st.markdown(markdown, unsafe_allow_html=True)
 
-#st.header("📘 Gerador de Exercícios Inteligente", divider="red")  
-#tab1, tab2 = st.tabs(["Gerador de Exercícios", "Tutor Digital"])
 
 
+# Carregamento do Modelo Escolhido com cache (PARA OTIMIZAÇÃO DE DESEMPENHO)
 id_model = "openai/gpt-oss-120b" if model=="GPT-120B" else "meta-llama/llama-4-maverick-17b-128e-instruct"
-llm, embeddings = get_tools(id_model, temperature)
+llm = get_tools(id_model, temperature) 
 
 # --- CONTEÚDO PRINCIPAL ---
 st.markdown('<h1 class="main-header">📘 Gerador de Exercícios Inteligente</h1>', unsafe_allow_html=True)
 
-tab1, tab2 = st.tabs(["🎯 Gerador de Conteúdo", "🤖 Tutor RAG Digital"])
+tab1, tab2 = st.tabs(["🎯 Gerador de Conteúdo", "👨‍🏫 Tutor Digital"])
 
 # Interface Geração de exercícios
 with tab1:  
@@ -97,7 +94,8 @@ with tab1:
 
                     # Geração final
                     res = llm.invoke(prompt)
-                    st.markdown(format_res(res, return_thinking=False))
+                    response = str(res.content)
+                    st.markdown(response)
 
                     file_docx, path = convert_docx(res)
                     if file_docx:
@@ -114,48 +112,73 @@ with tab1:
                     st.error(f"Ocorreu um erro ao processar a aplicação: {e}")
 
 
-with tab2:
-    # Layout: uma coluna para o chat, outra para controles extras
-    chat_col, side_col = st.columns([0.7, 0.3], gap="large")
+with tab2:        
+    # Layout: uma coluna para o chat, outra para as perguntas do usuário
+    chat_col, output_col = st.columns([0.3, 0.7], gap="large")
 
+    # Mensagem Inicial do Agente
+    initial_message = """Olá, eu sou seu tutor digital! Estou aqui para lhe ajudar com todas as suas dúvidas.\
+            \nDesde explicações sobre os exercícios até pesquisas sobre tópicos recentes na internet!"""     
+
+    # Inicializar e salvar o estado do agente com as ferramentas
     if "graph" not in st.session_state:
         st.session_state["graph"] = graph_builder()
     graph = st.session_state["graph"]
 
-    if "messages" not in st.session_state:
-        st.session_state["messages"] = [
-            ("assistant", "Olá, eu sou seu tutor digital. Como posso lhe ajudar?")
-        ]    
+    # Inicializar mensagens apenas uma vez
+    if "messages" not in st.session_state or st.session_state["messages"] is None:
+        st.session_state["messages"] = [("assistant", initial_message)]
+        chat_col.chat_message("assistant", avatar="🎓").write(initial_message)
 
-    # Input fixo no rodapé da aba (fora das colunas)
-    user_input = chat_col.chat_input("Digite sua pergunta...")
+    # Inicializar logs
+    if "logs" not in st.session_state:
+        st.session_state["logs"] = []
 
+    
+    # Input fixo no rodapé da aba
+    user_input = chat_col.chat_input("Digite aqui sua pergunta...")
     if user_input:
-        with st.spinner("Consultando o agente... Por favor aguarde"):
-            st.session_state["messages"].append(("user", user_input))                       
+        # Adiciona mensagem do usuário
+        st.session_state["messages"].append(("user", user_input))
 
-            for event in graph.stream(
-                {"messages": [("user", user_input)]},
-                {"configurable": {"thread_id": "1"}}
-            ):
-                for value in event.values():
-                    last_message = value["messages"][-1].content
-                    if last_message:
-                        st.session_state["messages"].append(("assistant", last_message))                                                                                                
+        chat_col.chat_message("user").write(user_input)
 
-                        if "query" not  in last_message or "0" not in last_message:
-                           st.chat_message("assistant").markdown(last_message)
+        with output_col.chat_message("assistant", avatar="🎓"):
+            #st.status para esconder a complexidade do agente 
+            with st.status("🔍 Consultando fontes e processando...", expanded=False) as status:       # Mensagem inical de Status         
+                try:
+                    for event in graph.stream(
+                        {"messages": [("user", user_input)]},
+                        {"configurable": {"thread_id": "1"}}
+                    ):
+                        for node, value in event.items():
+                            # Captura mensagens de ferramentas (Wikipedia, Tavily)
+                            current_msg = value["messages"][-1]
+                            
+                            if hasattr(current_msg, "tool_calls") and current_msg.tool_calls:
+                                for tool in current_msg.tool_calls:
+                                    st.write(f"🛠️ Ativando ferramenta: **{tool['name']}**")
+                                    st.caption(f"Argumentos: {tool['args']}") # Menos técnico que o JSON puro
+                            
+                            # Se for a resposta final da ferramenta (output do Tavily/Wiki)
+                            if current_msg.type == "tool":
+                                st.write(f"✅ Informações coletadas de {current_msg.name}")
+                                # Mostramos apenas um resumo ou o conteúdo formatado, não o JSON bruto
+                                with st.expander("Ver dados brutos da pesquisa"):
+                                    st.json(current_msg.content)
+
+                    status.update(label="✅ Pesquisa concluída!", state="complete", expanded=False)
+
+                    # Exibe a resposta final amigável fora do status
+                    final_res = value["messages"][-1].content
+                    output_col.markdown(final_res)
+                    st.session_state["messages"].append(("assistant", final_res))
+
+                except Exception as error:
+                    status.update(label="Erro ao processar a requisição.", state="error")
+                    st.error(f"Erro ao processar a requisição. Por favor tente novamente: {error}")
+                                
+
+                
                         
-                        #with side_col:
-                        #    if "query" or "0" in last_message:
-                        #        with st.expander("Ver logs do Agente"):
-                        #            st.markdown(last_message)
-                                    
-                           
-
-
-          
-
-
-
-  
+                

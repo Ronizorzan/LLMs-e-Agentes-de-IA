@@ -14,8 +14,6 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
-from langchain_core.tools.retriever import create_retriever_tool
-from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper
 from typing_extensions import Annotated
@@ -33,17 +31,18 @@ load_dotenv()
 def get_tools(id_model, temperature):
     # Cache do LLM e Embeddings para evitar recarregamento
     llm = load_llm(id_model, temperature)
-    embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-m3")   # Modelo de Embedding Alternativo --> (BAAI/bge-small-en-v1.5)
-    return llm, embeddings
+    #embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")   # Modelo de Embedding Alternativo --> (BAAI/bge-small-en-v1.5, BAAI/bge-m3)
+    return llm#, embeddings
 
 
-def load_llm(id_model="openai/gpt-oss-120b", temperature=0.4):
+def load_llm(id_model="openai/gpt-oss-120b", temperature=0.7, max_tokens=None):
     llm = ChatGroq(
         model=id_model,
         temperature=temperature,
         timeout=None,
-        max_tokens=None,
-        max_retries=3)
+        max_tokens=max_tokens,
+        max_retries=3
+        )
     return llm
 
 
@@ -60,7 +59,7 @@ def format_res(response, return_thinking=False):
 # Função para criar o prompt caso não seja fornecido nenhum conteúdo para contexto
 def build_prompt(topic, quantity, level, interests):
     prompt = f"""
-Você é um tutor especialista em {topic}. Gere {quantity} exercícios para um aluno de nível {level}.
+Você é um tutor especialista em {topic}. Gere {quantity} exercícios EM PORTUGUÊS para um aluno de nível {level}.
 {f"- Apenas caso faça sentido no contexto, adapte de forma natural e sutil os enunciados dos exercícios para refletir a afinidade do aluno com o tema '{interests}'." if interests else ""}
 - Formato dos exercícios: Múltipla escolha com 4 opções.
 - Incluir explicação passo a passo e o raciocínio usado para chegar à resposta.
@@ -68,35 +67,37 @@ Você é um tutor especialista em {topic}. Gere {quantity} exercícios para um a
 
 Exemplo de estrutura:
 1. [Enunciado]
-   a) [Opção 1]
-   b) [Opção 2]
-   c) [Opção 3]
-   d) [Opção 4]
-   **Resposta:** [Letra correta]
-   **Explicação:** [Passo a passo detalhado]
+   - a) [Opção 1]
+   - b) [Opção 2]
+   - c) [Opção 3]
+   - d) [Opção 4]
+
+   > **Resposta:** [Letra correta] 
+
+   > **Explicação:** [Passo a passo detalhado]
 """
     return prompt
 
 def build_rag_prompt(quantity, level, interests, context):
     prompt = f"""
         Gere {quantity} exercícios sobre o conteúdo fornecido como contexto abaixo. Nível de dificuldade: {level}.
-        Cada exercício deve ser de múltipla escolha com 4 alternativas.
+        Cada exercício deve ser de múltipla escolha com 4 alternativas e no idioma português.
         Ao final, inclua as respostas corretas e uma explicação passo a passo.
         Não invente dados externos nem saia do escopo do material apresentado, utilize exclusivamente o conteúdo fornecido como contexto.
         Para e explicação da resposta, não justifique mencionando que foi obtido com o contexto fornecido abaixo. Você deve justificá-la com base no conhecimento que você tem.
-        {f"- Apenas caso faça sentido no contexto, adapte de forma natural e sutil os enunciados dos exercícios para refletir a afinidade do aluno com o tema '{interests}'" if interests else ""}
-        Retorne APENAS os exercícios pedidos com as explicações ao final. Retorne o resultado em markdown.        
+        {f"- Apenas caso faça sentido no contexto, adapte de forma natural e sutil os enunciados dos exercícios para refletir a afinidade do aluno com o tema '{interests}'" if interests else ""}        
         - Não use LaTeX e nenhuma sequência iniciada por barra invertida (como \frac, \sqrt, ou similares). Use apenas linguagem natural e símbolos comuns do teclado.
 
         Exemplo de estrutura:
         1. [Enunciado]
-        a) [Opção 1]
-        b) [Opção 2]
-        c) [Opção 3]
-        d) [Opção 4]
-        **Resposta:** [Letra correta]
-        **Explicação:** [Passo a passo detalhado]
-        ---
+        - a) [Opção 1]
+        - b) [Opção 2]
+        - c) [Opção 3]
+        - d) [Opção 4]
+
+        > **Resposta:** [Letra correta]
+
+        > **Explicação:** [Passo a passo detalhado]        
         """
     prompt_template_rag = """
     {input}
@@ -304,8 +305,8 @@ def wikipedia_tool(query):
 @tool
 def search_tool(query: str):
     """Busca informações na internet com base na consulta fornecida.
-    Use quando o usuário pedir por informações recentes, por pesquisa, ou quando você julgar que é necessário."""    
-    tavily_search = TavilySearch(max_results=3)
+    Use sempre que o usuário pedir por informações recentes, por pesquisa, ou quando você julgar que é necessário."""    
+    tavily_search = TavilySearch(max_results=2)
     result = tavily_search.invoke(query)
     return result
 
@@ -316,7 +317,7 @@ def get_llm_tools(llm):
     llm_with_tools = llm.bind_tools(tools=tools)
     return llm_with_tools, tools_node
 
-llm = load_llm()
+llm = load_llm(max_tokens=3000)
 llm_with_tools, tools_node = get_llm_tools(llm)
 
 def agent(state: State):

@@ -146,13 +146,13 @@ markdown = """
 <div class="footer">
     <p><strong>Desenvolvido por: Ronivan</strong></p>
     <a href="http://107.22.129.114:5678/webhook/4091fa09-fb9a-4039-9411-7104d213f601/chat" target="_blank">
-        <img src="https://cdn-icons-gif.flaticon.com/12205/12205168.gif" alt="Film Reel Icon">
+        <img src="https://cdn-icons-gif.flaticon.com/15579/15579184.gif" alt="Film Reel Icon">
     </a>
     <a href="https://github.com/Ronizorzan/LLMs-e-Agentes-de-IA" target="_blank">
-        <img src="https://cdn-icons-png.flaticon.com/128/2504/2504911.png" alt="GitHub">
+        <img src="https://cdn-icons-png.flaticon.com/128/536/536452.png" alt="GitHub">
     </a>
     <a href="https://www.linkedin.com/in/ronivan-zorzan-barbosa" target="_blank">
-        <img src="https://cdn-icons-png.flaticon.com/128/1384/1384072.png" alt="LinkedIn">
+        <img src="https://cdn-icons-png.flaticon.com/128/1377/1377213.png" alt="LinkedIn">
     </a>
     <a href="mailto:ronizorzan1992@gmail.com" target="_blank">
         <img src="https://cdn-icons-png.flaticon.com/128/5968/5968534.png" alt="Email">

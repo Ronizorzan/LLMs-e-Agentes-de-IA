@@ -34,7 +34,7 @@
       .download-btn:hover { background-color: #3B82F6; }
 
 .main-header { font-size: 2.5rem; 
-    color: #1E3A8A; font-weight: 700; margin-bottom: 1rem; }
-.card { background-color: rgb(239, 237, 237); padding: 2rem;
-         border-radius: 15px; border: 1px solid #c5d4cb;
+    color: #1E3A8A; font-weight: 700; margin-bottom: 2rem; }
+.card { background-color: rgb(247, 255, 245); padding: 2rem;
+         border-radius: 15px; border: 1px snow #91ae9c;
           box-shadow: 0 4px 6px rgba(0,0,0,0.05); }

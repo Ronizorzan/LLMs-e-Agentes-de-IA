@@ -62,7 +62,7 @@ Projetos prontos para execução via arquivos `.py`.
 - Resultado: **Exercícios personalizados baseados em documentos recuperados através de técnicas RAG.**
 > [Documentação Completa aqui](functions_and_documents\Gerador_de_exercicios\README.md)
 
-![Interface_gerador_de_exercicios](functions_and_documents\Gerador_de_exercicios\README.md)
+![Interface_gerador_de_exercicios](functions_and_documents\Gerador_de_exercicios\)
 
 #### 4)[Finanças - Assistente Financeiro](04_💵_Assistente_Financeiro.py)
 **Agente Inteligente - Insights Instantâneos sobre finanças**
