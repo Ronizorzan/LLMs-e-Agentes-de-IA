@@ -30,9 +30,8 @@ load_dotenv()
 @st.cache_resource
 def get_tools(id_model, temperature):
     # Cache do LLM e Embeddings para evitar recarregamento
-    llm = load_llm(id_model, temperature)
-    #embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-small-en-v1.5")   # Modelo de Embedding Alternativo --> (BAAI/bge-small-en-v1.5, BAAI/bge-m3)
-    return llm#, embeddings
+    llm = load_llm(id_model, temperature)    
+    return llm
 
 
 def load_llm(id_model="openai/gpt-oss-120b", temperature=0.7, max_tokens=None):
@@ -306,7 +305,7 @@ def wikipedia_tool(query):
 def search_tool(query: str):
     """Busca informações na internet com base na consulta fornecida.
     Use sempre que o usuário pedir por informações recentes, por pesquisa, ou quando você julgar que é necessário."""    
-    tavily_search = TavilySearch(max_results=2)
+    tavily_search = TavilySearch(max_results=3)
     result = tavily_search.invoke(query)
     return result
 
@@ -317,28 +316,5 @@ def get_llm_tools(llm):
     llm_with_tools = llm.bind_tools(tools=tools)
     return llm_with_tools, tools_node
 
-llm = load_llm(max_tokens=3000)
-llm_with_tools, tools_node = get_llm_tools(llm)
 
-def agent(state: State):
-    messages = state["messages"]        
-    response = llm_with_tools.invoke(messages)
-    tool_calls = response.additional_kwargs.get("tool_calls")
-    if tool_calls is not None:
-        st.write(tool_calls)
-    return {"messages": [response], "tool_calls": tool_calls}
-
-
-def graph_builder():
-    builder = StateGraph(State)
-    
-    builder.add_node("agent", agent)
-    builder.add_node("tools", tools_node)
-
-    builder.add_edge(START, "agent")
-    builder.add_conditional_edges("agent", tools_condition, ["tools", END])
-    builder.add_edge("tools", "agent")
-    memory = MemorySaver()
-    graph = builder.compile(checkpointer=memory)
-    return graph
 

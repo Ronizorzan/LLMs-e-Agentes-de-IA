@@ -57,12 +57,12 @@ Projetos prontos para execução via arquivos `.py`.
 #### 3)[Educação - Exercícios e Tutor Digital](03_👨‍🎓_Gerador_de_Exercicios.py)
 **Geração de Exercícios para professores**
 - Criação de exercícios personalizados para estudantes de diversas áreas.
-- Interface pronta para utilização e altamente personalizável com possibilidade de exportações de documentos.
+- Interface pronta para utilização e altamente personalizável com possibilidade de exportações de documentos em DOCX.
 - Possibilidade de configurar: nível, matéria, quantidade de exercícios, interesses, etc
 - Resultado: **Exercícios personalizados baseados em documentos recuperados através de técnicas RAG.**
 > [Documentação Completa aqui](functions_and_documents\Gerador_de_exercicios\README.md)
 
-![Interface_gerador_de_exercicios](functions_and_documents\Gerador_de_exercicios\)
+![Interface_gerador_de_exercicios](functions_and_documents\Gerador_de_exercicios\Interface_educacao.gif)
 
 #### 4)[Finanças - Assistente Financeiro](04_💵_Assistente_Financeiro.py)
 **Agente Inteligente - Insights Instantâneos sobre finanças**

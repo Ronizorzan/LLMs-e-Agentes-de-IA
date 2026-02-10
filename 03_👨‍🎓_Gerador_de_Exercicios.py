@@ -19,7 +19,7 @@ with st.sidebar:
     st.title("Painel de Controle")
     
     with st.expander("⚙️ Parâmetros da IA", expanded=True):
-        model = st.selectbox("Modelo", options=("GPT-120B", "Llama"))
+        model = st.selectbox("Modelo", options=("GPT-20B", "Llama"))
         temperature = st.slider("Criatividade do Modelo", 0.1, 1.5, 0.7, 
                                 help="""Valores baixos = respostas mais objetivas\
                                 \nvalores altos = respostas mais criativas""" )
@@ -28,13 +28,45 @@ with st.sidebar:
         st.markdown(markdown, unsafe_allow_html=True)
 
 
+# Funções Adicionais
+def agent(state: State):
+    messages = state["messages"]        
+    response = llm_with_tools.invoke(messages)
+    tool_calls = response.additional_kwargs.get("tool_calls")
+    if tool_calls is not None:
+        st.write(tool_calls)
+    return {"messages": [response], "tool_calls": tool_calls}
+
+
+def graph_builder():
+    builder = StateGraph(State)
+    
+    builder.add_node("agent", agent)
+    builder.add_node("tools", tools_node)
+
+    builder.add_edge(START, "agent")
+    builder.add_conditional_edges("agent", tools_condition, ["tools", END])
+    builder.add_edge("tools", "agent")
+    memory = MemorySaver()
+    graph = builder.compile(checkpointer=memory)
+    return graph
+
+
+
 
 # Carregamento do Modelo Escolhido com cache (PARA OTIMIZAÇÃO DE DESEMPENHO)
-id_model = "openai/gpt-oss-120b" if model=="GPT-120B" else "meta-llama/llama-4-maverick-17b-128e-instruct"
+id_model = "openai/gpt-oss-20b" if model=="GPT-20B" else "meta-llama/llama-prompt-guard-2-86m"
 llm = get_tools(id_model, temperature) 
 
 # --- CONTEÚDO PRINCIPAL ---
 st.markdown('<h1 class="main-header">📘 Gerador de Exercícios Inteligente</h1>', unsafe_allow_html=True)
+st.sidebar.markdown(
+    "### ⚠️ IMPORTANTE\n"
+    "Lembre-se: a IA funciona como suporte ao aprendizado, "
+    "mas a correção final deve sempre ser feita por um profissional da educação qualificado.",
+    unsafe_allow_html=False
+)
+
 
 tab1, tab2 = st.tabs(["🎯 Gerador de Conteúdo", "👨‍🏫 Tutor Digital"])
 
@@ -112,7 +144,9 @@ with tab1:
                     st.error(f"Ocorreu um erro ao processar a aplicação: {e}")
 
 
-with tab2:        
+with tab2:
+    # Agente com as ferramentas (Wikipedia e Tavily)
+    llm_with_tools, tools_node = get_llm_tools(llm)
     # Layout: uma coluna para o chat, outra para as perguntas do usuário
     chat_col, output_col = st.columns([0.3, 0.7], gap="large")
 
