@@ -36,9 +36,9 @@ Projetos prontos para execução via arquivos `.py`.
 - Respostas rápidas e contextualizadas a partir de PDFs.  
 - Estudo de caso: manual do **PlayStation 5**.  
 - [📖 Manual do Console aqui](https://www.playstation.com/content/dam/global_pdc/pt-br/corporate/support/manuals/ps5-docs/2100ab/CFI-21XX_PS5_Instruction_Manual_Web$pt-br.pdf)
-+ [Documentação Completa aqui](functions_and_documents\ProjetoRAG\README.md)
++ [Documentação Completa aqui](functions_and_documents/ProjetoRAG/README.md)
   
-[Interface da Aplicação Aqui - Chatbot Inteligente 💬](functions_and_documents\ProjetoRAG\Interface_Chat_RAG.gif)
+![Interface da Aplicação Aqui - Chatbot Inteligente 💬](functions_and_documents/ProjetoRAG/Interface_Chat_RAG.gif)
 
 ---
 
@@ -48,9 +48,9 @@ Projetos prontos para execução via arquivos `.py`.
 - Interface simples para engenharia de prompts sem necessidade de conhecimento técnico.  
 - Possibilidade de configurar: tópico, público-alvo, tamanho do texto, CTA, emojis e muito mais.  
 - Resultado: **conteúdo para aumentar engajamento pronto em segundos.**
-+ [Documentação Completa aqui](functions_and_documents\Gerador_de_Conteudo\README.md)
++ [Documentação Completa aqui](functions_and_documents/Gerador_de_Conteudo/README.md)
 
-[Interface da Aplicação Aqui - Gerador de Conteúdo para SEO 🧲](functions_and_documents\Gerador_de_Conteudo\Interface_gerador_de_conteudo.gif)
+![Interface da Aplicação Aqui - Gerador de Conteúdo para SEO 🧲](functions_and_documents/Gerador_de_Conteudo/Interface_gerador_de_conteudo.gif)
 
 ---
 
@@ -60,9 +60,9 @@ Projetos prontos para execução via arquivos `.py`.
 - Interface pronta para utilização e altamente personalizável com possibilidade de exportações de documentos em DOCX.
 - Possibilidade de configurar: nível, matéria, quantidade de exercícios, interesses, etc
 - Resultado: **Exercícios personalizados baseados em documentos recuperados através de técnicas RAG.**
-+ [Documentação Completa aqui](functions_and_documents\Gerador_de_exercicios\README.md)
++ [Documentação Completa aqui](functions_and_documents/Gerador_de_exercicios/README.md)
 
-[Interface da Aplicação Aqui - Tutor Digital 👨‍🎓](functions_and_documents\Gerador_de_exercicios\Interface_educacao.gif)
+![Interface da Aplicação Aqui - Tutor Digital 👨‍🎓](functions_and_documents/Gerador_de_exercicios/Interface_educacao.gif)
 
 ---
 
@@ -73,9 +73,9 @@ Projetos prontos para execução via arquivos `.py`.
 - Processamento adaptado para documentos variados, como PDF, CSV e XLSX.
 - Gráficos e Insights gerados po agente através de perguntas em linguagem natural.
 - Resultado: **Gráficos e Insights confiáveis gerados em segundos SEM UMA LINHA DE CÓDIGO SEQUER**
-+ [Documentação completa aqui](functions_and_documents\Assistente_Fincaneiro\README.md)
++ [Documentação completa aqui](functions_and_documents/Assistente_Fincaneiro/README.md)
 
-[Interface da Aplicação Aqui - Assistente Financeiro 💵](functions_and_documents\Assistente_Fincaneiro\Interface_Assistente_financeiro.gif)
+![Interface da Aplicação Aqui - Assistente Financeiro 💵](functions_and_documents/Assistente_Fincaneiro/Interface_Assistente_financeiro.gif)
 
 ---
 

@@ -87,11 +87,11 @@ if "chat_history" not in st.session_state:
 # Fallback para Modelo alternativo caso Haja muita requisições à API do Modelo
 if model == "Groq":
     try:
-        llm = Groq(model="moonshotai/kimi-k2-instruct", temperature=0.15)        
+        llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)                
     
     except Exception as rate_limit:
         if "limit" or "429" in str(rate_limit).lower():
-            llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)        
+            llm = Groq(model="moonshotai/kimi-k2-instruct", temperature=0.15)
             
             
 
