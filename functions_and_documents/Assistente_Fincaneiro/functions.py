@@ -109,8 +109,7 @@ def save_json(data: Union[Dict, List[Dict]], file_path: Union[str, Path] = "fina
     if path_obj.suffix != ".json":
         path_obj = path_obj.with_suffix(".json")
     
-    try:
-        # CORREÇÃO AQUI: Mudado de "r" para "w"
+    try:        
         with open(path_obj, "w", encoding="utf-8") as file:
             json.dump(data, file, ensure_ascii=False, indent=4)
     except Exception as error:
@@ -198,7 +197,7 @@ def generate_graphs(
             fig.add_trace(go.Scatter(x=df[col_x], y=df[col_y], mode='markers', marker=dict(color=color_map, size=10)))
         elif graph_type == "gauge":
              fig.add_trace(go.Indicator(
-                mode="gauge+number", value=df[col_y].iloc[-1], title={'text': title},
+                mode="gauge+number", value=df[col_y].iloc[-1],
                 gauge={'axis': {'range': [None, df[col_y].max()*1.2]}, 'bar': {'color': color_map}}
             ))
         else:
@@ -212,8 +211,8 @@ def generate_graphs(
             yaxis_title=col_y,
             template="plotly_white",
             hovermode="x unified",            
-            xaxis=dict(showgrid=True, gridcolor="lightgrey", font=dict(size=16)),
-            yaxis=dict(showgrid=True, gridcolor="lightgrey", font=dict(size=16))
+            xaxis=dict(showgrid=True, gridcolor="lightgrey"),
+            yaxis=dict(showgrid=True, gridcolor="lightgrey")
         )
    
         

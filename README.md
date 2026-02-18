@@ -72,7 +72,7 @@ Projetos prontos para execução via arquivos `.py`.
 - Relatórios e resumos gerados em tempo real com base em documentos da empresa.
 - Processamento adaptado para documentos variados, como PDF, CSV e XLSX.
 - Gráficos e Insights gerados po agente através de perguntas em linguagem natural.
-- Resultado: **Gráficos e Insights confiáveis gerados em segundos SEM UMA LINHA DE CÓDIGO SEQUER**
+- Resultado: Gráficos e Insights confiáveis gerados em segundos **SEM UMA LINHA DE CÓDIGO SEQUER**
 + [Documentação completa aqui](functions_and_documents/Assistente_Fincaneiro/README.md)
 
 ![Interface da Aplicação Aqui - Assistente Financeiro 💵](functions_and_documents/Assistente_Fincaneiro/Interface_Assistente_financeiro.gif)

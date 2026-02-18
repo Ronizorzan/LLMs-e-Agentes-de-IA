@@ -35,11 +35,20 @@ def query_spreadsheet(query: str):
     """    
           
     try:
-        # Configuração verbose=True para depuração
+        # Metadados para dar contexto ao LLM
+        df_info = {
+            "columns": list(df.columns),
+            "dtypes": df.dtypes.astype(str).to_dict(),
+            "rows": len(df),
+            "sample": df.head(3).to_dict(orient="records")
+        }
+
+
+        # Configuração verbose=True para depuração                
         pandas_query_engine = PandasQueryEngine(df=df, llm=Settings.llm, verbose=True)
         
         result = pandas_query_engine.query(query)
-        return str(result)
+        return f"Contexto do DataFrame: {df_info}\n\nResultado da Consulta:\n{str(result)}"
     except Exception as e:
         return f"Erro ao executar query no Pandas: {e}" 
            
@@ -87,17 +96,18 @@ if "chat_history" not in st.session_state:
 # Fallback para Modelo alternativo caso Haja muita requisições à API do Modelo
 if model == "Groq":
     try:
-        llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)                
+        llm = Groq(model="moonshotai/kimi-k2-instruct", temperature=0.15)
     
-    except Exception as rate_limit:
-        if "limit" or "429" in str(rate_limit).lower():
-            llm = Groq(model="moonshotai/kimi-k2-instruct", temperature=0.15)
+    except Exception:                
+        llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)                
             
             
-
+# Modelo Gemini substituído temporariamente para depuração
 elif model == "Gemini":    
-    llm = GoogleGenAI(model="models/gemini-2.5-flash", 
-                      temperature=0.15, api_key=os.getenv("GOOGLE_NEW_API_KEY"))
+    llm = Groq(model="moonshotai/kimi-k2-instruct-0905", temperature=0.15)
+#    llm = GoogleGenAI(model="models/gemini-2.5-flash",
+ #                     temperature=0.15, api_key=os.getenv("GOOGLE_NEW_API_KEY"))
+
 
 # Seta o LLM escolhido globalmente
 Settings.llm = llm
@@ -135,7 +145,7 @@ if uploaded_file: # Primeira interação
                     fn=query_spreadsheet,
                     description="FERRAMENTA PRINCIPAL. Use para acessar os dados do arquivo carregado (CSV/Excel). "
                                 "Use para responder perguntas de texto E TAMBÉM para buscar dados numéricos antes de criar gráficos." \
-                                "Use preferencialmente comandos do pandas ou queries com aspas duplas. " \
+                                "Use preferencialmente comandos do pandas ou queries com aspas duplas para consultar a tabela. " \
                                 "Do contrário um erro do tipo Failed to parse tool call arguments as JSON pode ser disparado")
                     
                     
