@@ -11,19 +11,19 @@
 ## 📂 Estrutura do Repositório
 
 ### [`functions_and_documents`](functions_and_documents)
-Contém funções auxiliares e documentos adicionais, organizados por projeto para garantir controle e clareza.
+- *Contém funções auxiliares e documentos adicionais, organizados por projeto para garantir controle e clareza.*
 
-- [`functions_and_documents/Gerador_de_Conteudo/functions.py`](functions_and_documents/Gerador_de_Conteudo/functions.py)  
-  Funções utilizadas no projeto de **geração de conteúdo para SEO**.
+#### [`functions_and_documents/Gerador_de_Conteudo/functions.py`](functions_and_documents/Gerador_de_Conteudo/functions.py)  
+> Funções utilizadas no projeto de **geração de conteúdo para SEO**.
 
-- [`functions_and_documents/ProjetoRAG/functions.py`](functions_and_documents/ProjetoRAG/functions.py)  
-  Funções utilizadas no projeto **RAG (Retrieval-Augmented Generation)**.
+#### [`functions_and_documents/ProjetoRAG/functions.py`](functions_and_documents/ProjetoRAG/functions.py)  
+> Funções utilizadas no projeto **RAG (Retrieval-Augmented Generation)**.
 
-- [`functions_and_documents/Gerador_de_exercicios/functions.py`](functions_and_documents/Gerador_de_exercicios/functions.py)
-    Funções utilizadas no projeto de **geração de exercícios com RAG.**
+#### [`functions_and_documents/Gerador_de_exercicios/functions.py`](functions_and_documents/Gerador_de_exercicios/functions.py)
+> Funções utilizadas no projeto de **geração de exercícios com RAG.**
 
-- [`functions_and_documents\Assistente_Fincaneiro\functions.py`](functions_and_documents/Assistente_Fincaneiro/functions.py)
-    Funções utilizadas no projeto de **Análise de Documentos Financeiros**
+#### [`functions_and_documents\Assistente_Fincaneiro\functions.py`](functions_and_documents/Assistente_Fincaneiro/functions.py)
+> Funções utilizadas no projeto de **Análise de Documentos Financeiros**
 
 ---
 
@@ -38,7 +38,7 @@ Projetos prontos para execução via arquivos `.py`.
 - [📖 Manual do Console aqui](https://www.playstation.com/content/dam/global_pdc/pt-br/corporate/support/manuals/ps5-docs/2100ab/CFI-21XX_PS5_Instruction_Manual_Web$pt-br.pdf)
 + [Documentação Completa aqui](functions_and_documents\ProjetoRAG\README.md)
   
-![Interface_Chat_RAG](functions_and_documents\ProjetoRAG\Interface_Chat_RAG.gif)
+[Interface da Aplicação Aqui - Chatbot Inteligente 💬](functions_and_documents\ProjetoRAG\Interface_Chat_RAG.gif)
 
 ---
 
@@ -50,7 +50,7 @@ Projetos prontos para execução via arquivos `.py`.
 - Resultado: **conteúdo para aumentar engajamento pronto em segundos.**
 + [Documentação Completa aqui](functions_and_documents\Gerador_de_Conteudo\README.md)
 
-![Interface_gerador_de_conteudo](functions_and_documents\Gerador_de_Conteudo\Interface_gerador_de_conteudo.gif)
+[Interface da Aplicação Aqui - Gerador de Conteúdo para SEO 🧲](functions_and_documents\Gerador_de_Conteudo\Interface_gerador_de_conteudo.gif)
 
 ---
 
@@ -62,17 +62,20 @@ Projetos prontos para execução via arquivos `.py`.
 - Resultado: **Exercícios personalizados baseados em documentos recuperados através de técnicas RAG.**
 + [Documentação Completa aqui](functions_and_documents\Gerador_de_exercicios\README.md)
 
-![Interface_gerador_de_exercicios](functions_and_documents\Gerador_de_exercicios\Interface_educacao.gif)
+[Interface da Aplicação Aqui - Tutor Digital 👨‍🎓](functions_and_documents\Gerador_de_exercicios\Interface_educacao.gif)
+
+---
 
 #### 4)[Finanças - Assistente Financeiro](04_💵_Assistente_Financeiro.py)
 **Agente Inteligente - Insights Instantâneos sobre finanças**
-- Geração de resumos instantâneas sobre finanças baseados em documentos da Empresa.
+- Entrega de recomendações personalizadas com base em necessidades reais da empresa.
+- Relatórios e resumos gerados em tempo real com base em documentos da empresa.
 - Processamento adaptado para documentos variados, como PDF, CSV e XLSX.
-- Insights gerados por agentes através de perguntas em linguagem natural.
+- Gráficos e Insights gerados po agente através de perguntas em linguagem natural.
 - Resultado: **Gráficos e Insights confiáveis gerados em segundos SEM UMA LINHA DE CÓDIGO SEQUER**
 + [Documentação completa aqui](functions_and_documents\Assistente_Fincaneiro\README.md)
 
-![Interface_assistente_financeiro](functions_and_documents\Assistente_Fincaneiro\README.md)
+[Interface da Aplicação Aqui - Assistente Financeiro 💵](functions_and_documents\Assistente_Fincaneiro\Interface_Assistente_financeiro.gif)
 
 ---
 
@@ -101,8 +104,9 @@ Acesse no navegador:
 http://localhost:8501
 
 
-Crie um arquivo `.env` na raiz do projeto e adicione sua chave da Groq API:
+Crie um arquivo `.env` na raiz do projeto e adicione sua chave da Groq API, Gemini API, etc:
 GROQ_API_KEY=suachaveaqui
+GOOGLE_API_KEY=suachaveaqui
 
 
 ## 📌 Status

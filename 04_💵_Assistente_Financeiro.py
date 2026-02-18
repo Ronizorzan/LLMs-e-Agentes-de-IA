@@ -296,9 +296,4 @@ else:
     st.markdown("<h1 style='text-align: center; color: #C9C9C9;'>Bem-vindo ao seu Assistente Financeiro 💵</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: #C9C9C9;'>Utilize o menu lateral para carregar sua planilha (CSV/XLSX) ou relatório (PDF) e começar a análise.</p>", unsafe_allow_html=True)    
 
-    #st.metric("📑 Leitura Inteligente", "Ativo", delta_color="blue")
-    #st.metric("📈 Insights Financeiros", "Em tempo real")
-    #t.metric("🔍 Busca Contextual", "Disponível")
-
-    #style_metric_cards()
     

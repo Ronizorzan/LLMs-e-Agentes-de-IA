@@ -204,7 +204,7 @@ def generate_graphs(
         else:
             return f"Tipo de gráfico '{graph_type}' não suportado."
 
-        #fig.update_layout(title=title, xaxis_title=col_x, yaxis_title=col_y, template="plotly_white")
+        
         # Estilização do Gráfico
         fig.update_layout(
             title=dict(text=title, font=dict(size=20, color=color_map)),
@@ -212,8 +212,8 @@ def generate_graphs(
             yaxis_title=col_y,
             template="plotly_white",
             hovermode="x unified",            
-            xaxis=dict(showgrid=True, gridcolor="lightgrey"),
-            yaxis=dict(showgrid=True, gridcolor="lightgrey")
+            xaxis=dict(showgrid=True, gridcolor="lightgrey", font=dict(size=16)),
+            yaxis=dict(showgrid=True, gridcolor="lightgrey", font=dict(size=16))
         )
    
         
