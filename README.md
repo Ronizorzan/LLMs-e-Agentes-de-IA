@@ -1,13 +1,10 @@
 # 🚀 Projetos com LLMs
 
 *Este portfólio reúne projetos que utilizam **Modelos de Linguagem (LLMs)** para resolver diferentes problemas de negócio.*  
-
-O repositório está em constante evolução: novas funções e páginas serão adicionadas gradualmente.
-
+*O repositório está em constante evolução: novas funções e páginas serão adicionadas gradualmente.*
 *Cada arquivo representa uma solução prática para desafios comuns enfrentados por empresas.*
-
-*Os projetos foram desenvolvidos para serem **facilmente adaptáveis** 
-a diferentes contextos, bastando ajustes simples em lógicas, prompts e dados.*
+*Os projetos foram desenvolvidos para serem* ***facilmente adaptáveis***
+*a diferentes contextos, bastando ajustes simples em lógicas, prompts e dados.*
 
 ---
 
@@ -17,13 +14,16 @@ a diferentes contextos, bastando ajustes simples em lógicas, prompts e dados.*
 Contém funções auxiliares e documentos adicionais, organizados por projeto para garantir controle e clareza.
 
 - [`functions_and_documents/Gerador_de_Conteudo/functions.py`](functions_and_documents/Gerador_de_Conteudo/functions.py)  
-  Funções utilizadas no projeto de **geração de conteúdo**.
+  Funções utilizadas no projeto de **geração de conteúdo para SEO**.
 
 - [`functions_and_documents/ProjetoRAG/functions.py`](functions_and_documents/ProjetoRAG/functions.py)  
   Funções utilizadas no projeto **RAG (Retrieval-Augmented Generation)**.
 
 - [`functions_and_documents/Gerador_de_exercicios/functions.py`](functions_and_documents/Gerador_de_exercicios/functions.py)
     Funções utilizadas no projeto de **geração de exercícios com RAG.**
+
+- [`functions_and_documents\Assistente_Fincaneiro\functions.py`](functions_and_documents/Assistente_Fincaneiro/functions.py)
+    Funções utilizadas no projeto de **Análise de Documentos Financeiros**
 
 ---
 
@@ -36,7 +36,7 @@ Projetos prontos para execução via arquivos `.py`.
 - Respostas rápidas e contextualizadas a partir de PDFs.  
 - Estudo de caso: manual do **PlayStation 5**.  
 - [📖 Manual do Console aqui](https://www.playstation.com/content/dam/global_pdc/pt-br/corporate/support/manuals/ps5-docs/2100ab/CFI-21XX_PS5_Instruction_Manual_Web$pt-br.pdf)
-> [Documentação Completa aqui](functions_and_documents\ProjetoRAG\README.md)
++ [Documentação Completa aqui](functions_and_documents\ProjetoRAG\README.md)
   
 ![Interface_Chat_RAG](functions_and_documents\ProjetoRAG\Interface_Chat_RAG.gif)
 
@@ -48,7 +48,7 @@ Projetos prontos para execução via arquivos `.py`.
 - Interface simples para engenharia de prompts sem necessidade de conhecimento técnico.  
 - Possibilidade de configurar: tópico, público-alvo, tamanho do texto, CTA, emojis e muito mais.  
 - Resultado: **conteúdo para aumentar engajamento pronto em segundos.**
-> [Documentação Completa aqui](functions_and_documents\Gerador_de_Conteudo\README.md)
++ [Documentação Completa aqui](functions_and_documents\Gerador_de_Conteudo\README.md)
 
 ![Interface_gerador_de_conteudo](functions_and_documents\Gerador_de_Conteudo\Interface_gerador_de_conteudo.gif)
 
@@ -60,19 +60,21 @@ Projetos prontos para execução via arquivos `.py`.
 - Interface pronta para utilização e altamente personalizável com possibilidade de exportações de documentos em DOCX.
 - Possibilidade de configurar: nível, matéria, quantidade de exercícios, interesses, etc
 - Resultado: **Exercícios personalizados baseados em documentos recuperados através de técnicas RAG.**
-> [Documentação Completa aqui](functions_and_documents\Gerador_de_exercicios\README.md)
++ [Documentação Completa aqui](functions_and_documents\Gerador_de_exercicios\README.md)
 
 ![Interface_gerador_de_exercicios](functions_and_documents\Gerador_de_exercicios\Interface_educacao.gif)
 
 #### 4)[Finanças - Assistente Financeiro](04_💵_Assistente_Financeiro.py)
 **Agente Inteligente - Insights Instantâneos sobre finanças**
-- Geração de resumos instantâneas sobre finanças baseados em documentos diversos
-- 
--
--
-> [Documentação completa aqui](functions_and_documents\Assistente_Fincaneiro\README.md)
+- Geração de resumos instantâneas sobre finanças baseados em documentos da Empresa.
+- Processamento adaptado para documentos variados, como PDF, CSV e XLSX.
+- Insights gerados por agentes através de perguntas em linguagem natural.
+- Resultado: **Gráficos e Insights confiáveis gerados em segundos SEM UMA LINHA DE CÓDIGO SEQUER**
++ [Documentação completa aqui](functions_and_documents\Assistente_Fincaneiro\README.md)
 
 ![Interface_assistente_financeiro](functions_and_documents\Assistente_Fincaneiro\README.md)
+
+---
 
 ## ✨ Diferenciais
 - Projetos modulares e reutilizáveis.  

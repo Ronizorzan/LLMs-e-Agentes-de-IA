@@ -1,16 +1,21 @@
-from llama_index.llms.google_genai import GoogleGenAI
-from llama_index.experimental.query_engine import PandasQueryEngine
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-from llama_index.core.agent.workflow import AgentStream, ToolCallResult, FunctionAgent
-from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
-from deep_translator import GoogleTranslator
+# =================== Visualização ===========================
 import plotly.graph_objects as go
-import pandas as pd
+import plotly.io as pio
+
+# =============== Manipulação de dados e Variáveis ====================
+import json
+import streamlit as st
 import sys
 import io
-import streamlit as st
 from pathlib import Path
-from typing import Dict, Union
+from typing import Union, Dict, List
+import pandas as pd
+
+# ======================= Bibliotecas Principais ======================
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
+from deep_translator import GoogleTranslator
+from llama_index.core.agent.workflow import AgentStream, ToolCallResult
 
 
 
@@ -33,8 +38,8 @@ def summary_docs(content: str):
     Você é um analista financeiro com vasta experiência em análise financeira.
     Ao ler o relatório a seguir, extraia insights financeiros relevantes e explique-os de forma clara, didática e resumida, como se estivesse apresentando para gestores não especialistas.
     Utilize linguagem acessível e destaque pontos importantes sobre lucros, despesas, fluxo de caixa, riscos e oportunidades.
-    Retorne o texto em linguagem natural e com caracteres que possuem em um teclado comum, sem caracteres ou símbolos LaTex, para serem exibidos em uma interface de usuário como markdown.
-    Resuma o conteúdo de forma breve e objetiva. Retorne a mensagem direta, sem apresentações no início.    
+    Retorne o texto em linguagem natural e com caracteres que possuem em um teclado comum, sem caracteres ou símbolos LaTex, para serem exibidos em uma interface de usuário com markdown.
+    Resuma o conteúdo de forma breve e objetiva. Retorne a mensagem direta, sem apresentações no início.
 
     ---
     Conteúdo do documento:
@@ -53,172 +58,174 @@ def translate_content(content: str, source_lang: str = "auto", target_lang: str 
     return translated_content
 
 
-# ==================== Consulta em planilhas usando PandasQueryEngine =========================
-def query_spreadsheet(query):
-    """Consulta dados na planilha carregada. Use para cálculos e análises de tabelas utilizando o pandas."""    
-    try:
-        df = st.session_state["df"]
-    except Exception as e:
-        st.write(f"Erro ao carregar o arquivo: {str(e)}")
-    pandas_query_engine = PandasQueryEngine(df=df, llm=Settings.llm, verbose=True)
-    result = pandas_query_engine.query(query)
-    return str(result)
 
-# ==================== Execução do agente FunctionAgent =========================
+# ==================== Execução do agente (Melhorado o Log) =========================
 async def run_agent(query):
     old_stdout = sys.stdout
     sys.stdout = mystdout = io.StringIO()
+    logs = ""
 
-    try:
+    try:        
         handler = st.session_state.agent.run(query)
 
+        # Captura de eventos para mostrar "pensamento" do Agente
         async for event in handler.stream_events():
             if isinstance(event, ToolCallResult):
-                print(f"**{event.tool_name}** with args: {event.tool_kwargs}. Returned: {event.tool_output} ")
+                # Formatação mais limpa para o log
+                sys.stdout.write(f"\n🛠️ **Usou ferramenta:** {event.tool_name}\n")
+                sys.stdout.write(f"   ARGS: {event.tool_kwargs}\n")
+                sys.stdout.write(f"   RETORNO: {str(event.tool_output)[:200]}...\n") # Limita tamanho do log
             elif isinstance(event, AgentStream):
-                print(event.delta, end="", flush=True)
+                # Opcional: imprimir o delta se quiser streaming de texto real
+                pass
         
         response = await handler
-        formatted = f"### Resposta do Assistente Financeiro:\n\n{str(response.response)}"
+        formatted_response = str(response.response)
+    
+    except Exception as e:
+        formatted_response = f"Ocorreu um erro durante o processamento: {str(e)}"
+        sys.stdout.write(f"\nERRO CRÍTICO: {str(e)}\n")
     
     finally:
         sys.stdout = old_stdout
-
+    
     logs = mystdout.getvalue()
-    return formatted, logs
+    return formatted_response, logs
+
+# ==================== Função para salvar arquivo JSON (CORRIGIDA) =====================
+def save_json(data: Union[Dict, List[Dict]], file_path: Union[str, Path] = "financial_data.json") -> str:
+    """
+    Salva dados extraídos (dict ou lista de dicts) em um arquivo JSON.
+    OBRIGATÓRIO: Esta função deve ser chamada ANTES de gerar gráficos.
+    
+    Parameters
+    ----------
+    data : Dict | List[Dict]
+        Os dados a serem salvos. O Agente deve garantir que isso seja um JSON válido.
+    file_path : str
+        Nome do arquivo.
+    """
+    path_obj = Path(file_path)
+    if path_obj.suffix != ".json":
+        path_obj = path_obj.with_suffix(".json")
+    
+    try:
+        # CORREÇÃO AQUI: Mudado de "r" para "w"
+        with open(path_obj, "w", encoding="utf-8") as file:
+            json.dump(data, file, ensure_ascii=False, indent=4)
+    except Exception as error:
+        raise IOError(f"Erro ao salvar JSON: {str(error)}")
+    
+    # Removido st.toast daqui para evitar erros de thread, o agente retorna a string
+    return str(path_obj)
 
 
-
+# ==================== Função para geração dos Gráficos (Robusta) ====================
 def generate_graphs(
-    df_path: Union[str, Path],
+    json_path: Union[str, Path],
     col_x: str,
     col_y: str = "revenue",
     graph_type: str = "bar",
-    color_map: str = "#FFBBFF",
+    color_map: str = "#302DF1",
     title: str = "Resumo Financeiro"
 ):
     """
-    Gera gráficos financeiros de forma robusta e flexível.
-    O caminho correto do arquivo gravado anteriormente com 'save_df' é obrigatório.
+    Gera um gráfico interativo a partir de dados salvos em JSON.
+
+    A função lê um arquivo JSON previamente salvo, converte em DataFrame
+    e cria um gráfico com Plotly. É útil para visualizações rápidas
+    e impactantes em relatórios ou dashboards.
 
     Parameters
     ----------
-    df_path : str | Path
-        Caminho para o arquivo CSV contendo os dados.
+    json_path : str ou Path
+        Caminho para o arquivo JSON salvo anteriormente.
     col_x : str
-        Nome da coluna a ser usada no eixo X.
+        Nome da coluna que será usada no eixo X.
     col_y : str, default="revenue"
-        Nome da coluna a ser usada no eixo Y.
-    graph_type : str, default="bar"
-        Tipo de gráfico a ser gerado. Opções: "bar", "line", "gauge", "scatter".
-    color_map : str, default="#FFBBFF"
-        Cor ou esquema de cores para o gráfico.
+        Nome da coluna que será usada no eixo Y.
+    graph_type : {"bar", "line", "scatter", "gauge"}, default="bar"
+        Tipo de gráfico desejado.
+    color_map : str, default="#302DF1"
+        Cor principal do gráfico (hexadecimal ou nome).
     title : str, default="Resumo Financeiro"
-        Título do gráfico.
+        Título exibido no gráfico.
 
     Returns
     -------
-    fig : plotly.graph_objects.Figure
-        Objeto da figura gerada.
+    str
+        Mensagem de sucesso ou erro.
     """
-
-    # Verificação do caminho
-    df_path = Path(df_path)
-    if not df_path.exists():
-        raise FileNotFoundError(f"O arquivo '{df_path}' não foi encontrado.")
+    path_obj = Path(json_path)
+    
+    # 1. Tenta carregar o DataFrame
+    if not path_obj.exists():
+         path_obj = path_obj.with_suffix(".json")
+         if not path_obj.exists():
+            return "Erro: Arquivo JSON não encontrado. Você salvou os dados antes com save_json?"
 
     try:
-        df = pd.read_csv(df_path)
-    except Exception as e:
-        raise ValueError(f"Erro ao carregar o DataFrame: {e}")
+        with open(path_obj, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Normalização robusta: se for lista ou dict
+        if isinstance(data, list):
+            df = pd.DataFrame(data)
+        elif isinstance(data, dict):
+            # Tenta converter dict diretamente ou usa json_normalize
+            df = pd.json_normalize(data)
+        else:
+            return "Erro: Formato de JSON desconhecido/inválido para gráfico."
 
-    # Verificação das colunas
-    for col in [col_x, col_y]:
-        if col not in df.columns:
-            raise KeyError(f"A coluna '{col}' não existe no DataFrame. Colunas disponíveis: {list(df.columns)}")
+    except Exception as e:
+        return f"Erro ao ler JSON: {e}"
+
+    # 2. Validação de Colunas (Case Insensitive para ajudar o Agente)
+    df.columns = [c.strip() for c in df.columns] # Remove espaços extras
+    
+    if col_x not in df.columns or col_y not in df.columns:
+        # Tenta achar colunas parecidas se o agente errou por pouco
+        return f"Erro: Colunas '{col_x}' ou '{col_y}' não encontradas. Colunas disponíveis: {list(df.columns)}"
 
     fig = go.Figure()
 
-    # Seleção do tipo de gráfico
-    if graph_type == "bar":
-        fig.add_trace(go.Bar(
-            x=df[col_x], y=df[col_y],
-            name='Receita',
-            marker_color=color_map
-        ))
-    elif graph_type == "line":
-        fig.add_trace(go.Scatter(
-            x=df[col_x], y=df[col_y],
-            mode='lines+markers',
-            name='Receita',
-            line=dict(color=color_map)
-        ))
-    elif graph_type == "gauge":
-        fig.add_trace(go.Indicator(
-            mode="gauge+number",
-            value=df[col_y].iloc[-1],
-            title={'text': title},
-            gauge={
-                'axis': {'range': [None, df[col_y].max() * 1.2]},
-                'bar': {'color': color_map}
-            }
-        ))
-    elif graph_type == "scatter":
-        fig.add_trace(go.Scatter(
-            x=df[col_x], y=df[col_y],
-            mode='markers',
-            name='Receita',
-            marker=dict(color=color_map, size=10)
-        ))
-    else:
-        raise ValueError(f"Tipo de gráfico '{graph_type}' não suportado. Use: bar, line, gauge, scatter.")
-
-    # Configurações adicionais
-    fig.update_layout(
-        title=title,
-        xaxis_title=col_x,
-        yaxis_title=col_y,
-        template="plotly_white"
-    )
-
-    # Guardar no estado do Streamlit
-    st.session_state["last_fig"] = fig
-    st.success(f"✅ Gráfico gerado com sucesso usando o arquivo: {df_path}")
-
-    return fig
-
-
-def save_df(data: Dict, file_path: Union[str, Path] = "spreadsheet_data.csv") -> Path:
-    """
-    Salva dados de um dicionário em um DataFrame Pandas e exporta para CSV.
-
-    Parameters
-    ----------
-    data : dict
-        Dicionário contendo os dados. As chaves devem ser nomes de colunas.
-    file_path : str | Path, default="spreadsheet_data.csv"
-        Caminho onde o arquivo CSV será salvo.
-
-    Returns
-    -------
-    Path
-        Caminho do arquivo salvo.
-    """
-
-    if not isinstance(data, dict):
-        raise TypeError("Os dados devem ser fornecidos como um dicionário.")
-
-    df = pd.DataFrame.from_dict(data)
-
-    file_path = Path(file_path)
     try:
-        df.to_csv(file_path, index=False)
-    except Exception as e:
-        raise IOError(f"Erro ao salvar o DataFrame em '{file_path}': {e}")
+        if graph_type == "bar":
+            fig.add_trace(go.Bar(x=df[col_x], y=df[col_y], name=col_y, marker_color=color_map))
+        elif graph_type == "line":
+            fig.add_trace(go.Scatter(x=df[col_x], y=df[col_y], mode='lines+markers', line=dict(color=color_map)))
+        elif graph_type == "scatter":
+            fig.add_trace(go.Scatter(x=df[col_x], y=df[col_y], mode='markers', marker=dict(color=color_map, size=10)))
+        elif graph_type == "gauge":
+             fig.add_trace(go.Indicator(
+                mode="gauge+number", value=df[col_y].iloc[-1], title={'text': title},
+                gauge={'axis': {'range': [None, df[col_y].max()*1.2]}, 'bar': {'color': color_map}}
+            ))
+        else:
+            return f"Tipo de gráfico '{graph_type}' não suportado."
 
-    st.success(f"✅ DataFrame salvo com sucesso em: {file_path}")
-    return file_path
+        #fig.update_layout(title=title, xaxis_title=col_x, yaxis_title=col_y, template="plotly_white")
+        # Estilização do Gráfico
+        fig.update_layout(
+            title=dict(text=title, font=dict(size=20, color=color_map)),
+            xaxis_title=col_x,
+            yaxis_title=col_y,
+            template="plotly_white",
+            hovermode="x unified",            
+            xaxis=dict(showgrid=True, gridcolor="lightgrey"),
+            yaxis=dict(showgrid=True, gridcolor="lightgrey")
+        )
+   
+        
+        # SALVAMENTO ESTÁTICO DO PLOTLY
+        static_graph_path = "static_graph.json"
+        pio.write_json(fig, static_graph_path) # Salva o Gráfico fisicamente
+        st.toast(f"✅ Gráfico gerado com sucesso e salvo em: {static_graph_path}!")
+        return "✅ Gráfico gerado com sucesso"
 
 
+    except Exception as e:        
+        return f"Erro ao plotar gráfico: {e}"
     
+            
 # ==================== Fim do código =========================

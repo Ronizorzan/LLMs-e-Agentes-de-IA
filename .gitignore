@@ -13,3 +13,5 @@ __pycache__/
 *.pdf
 .idea/
 tests/
+*.json
+*.md
