@@ -7,6 +7,7 @@ import json
 import streamlit as st
 import sys
 import io
+import re
 from pathlib import Path
 from typing import Union, Dict, List
 import pandas as pd
@@ -57,7 +58,19 @@ def translate_content(content: str, source_lang: str = "auto", target_lang: str 
     translated_content = GoogleTranslator(source=source_lang, target=target_lang).translate(content)
     return translated_content
 
+# ===================== Detecção automática de Coluna com data =======================
 
+# Regex para formatos comuns de data
+date_pattern = re.compile(r"^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})$")
+
+def looks_like_date(value):
+    pattern = r'^\d{4}-\d{2}-\d{2}|\d{2}/\d{2}/\d{4}$'
+    return bool(re.match(pattern, str(value)))
+
+
+def is_date_column(series, threshold=0.9):
+    matches = series.astype(str).apply(lambda x: bool(date_pattern.match(x)))
+    return matches.mean() >= threshold
 
 # ==================== Execução do agente (Melhorado o Log) =========================
 async def run_agent(query):
@@ -66,7 +79,7 @@ async def run_agent(query):
     logs = ""
 
     try:        
-        handler = st.session_state.agent.run(query)
+        handler = st.session_state.agent.run(query, early_sopping_method="generate", executor="process")
 
         # Captura de eventos para mostrar "pensamento" do Agente
         async for event in handler.stream_events():

@@ -127,18 +127,21 @@ if uploaded_file: # Primeira interação
                 df = pd.read_csv(path, sep=None, engine="python")     # Descobre o delimitador dinamicamente utilizando python           
                 st.session_state["df"] = df
                 try:
-                    st.session_state.df['date'] = pd.to_datetime(st.session_state.df['date'], errors='coerce') # Tenta converter a coluna de data                    
+                    st.session_state.df['date'] = pd.to_datetime(st.session_state.df['date'], errors='coerce') # Primeira tentativa de converter a coluna de data                    
                 
-                
+                # Segunda tentativa de Conversão (Mais robusta)
                 except: # Se a conversão falhar, usa 'difflib' para selecionar a coluna mais parecida com 'date'
                     target = "Date"
                     columns = st.session_state.df.columns.tolist()
                     date_col = difflib.get_close_matches(target, columns, n=1, cutoff=0)[0]                    
                     st.session_state.df[date_col] = pd.to_datetime(st.session_state.df[date_col], errors='coerce', format="mixed")
                 
+                # Terceira e última tentativa de conversão
                 else:
-                    date = st.sidebar.selectbox("Selecione a coluna de data", options=st.session_state.df.columns.tolist())
-                    st.session_state.df[date] = pd.to_datetime(st.session_state.df[date], errors='coerce', format="mixed")
+                    # Detectar e converter
+                    for col in df.columns:
+                        if is_date_column(df[col]):
+                            df[col] = pd.to_datetime(df[col], errors="coerce")
 
                 finally:
                     main_tool = FunctionTool.from_defaults(
@@ -151,9 +154,15 @@ if uploaded_file: # Primeira interação
                     
 
             elif uploaded_file.name.endswith(".xlsx"): # Processa arquivo Excel
-                df = pd.read_excel(path)
-                st.session_state.df = df
-                st.session_state.df['date'] = pd.to_datetime(st.session_state.df['date'], errors='coerce')
+                df = pd.read_excel(path)                
+                try:
+                    df['date'] = pd.to_datetime(df['date'], errors='coerce') # Primeira tentativa de conversão
+                except:
+                    # Detectar e converter
+                    for col in df.columns: # Segunda tentativa de Conversão (mais robusta)
+                        if is_date_column(df[col]):
+                            df[col] = pd.to_datetime(df[col], errors="coerce")
+                    
                 main_tool = FunctionTool.from_defaults(
                     fn=query_spreadsheet,
                     description="FERRAMENTA PRINCIPAL. Use para acessar os dados do arquivo carregado (CSV/Excel). "
@@ -211,10 +220,10 @@ if uploaded_file: # Primeira interação
                 content = "\n".join([doc.text for doc in docs])
                 st.session_state["summary"] = summary_docs(content[:15000])
             elif uploaded_file.name.endswith(".xlsx"):                
-                st.session_state["summary"] = summary_docs(st.session_state.df.head(500))
+                st.session_state["summary"] = summary_docs(st.session_state.df.head(200).to_string())
             else:                
-                st.session_state["summary"] = summary_docs(st.session_state.df.head(500))
-                    
+                st.session_state["summary"] = summary_docs(st.session_state.df.head(200).to_string())
+                
                            
             st.toast("Resumo gerado com sucesso!", icon="✅")             
 
