@@ -45,7 +45,8 @@ def query_spreadsheet(query: str):
 
 
         # Configuração verbose=True para depuração                
-        pandas_query_engine = PandasQueryEngine(df=df, llm=Settings.llm, verbose=True)
+        pandas_query_engine = PandasQueryEngine(df=df, llm=Settings.llm, verbose=True, 
+        use_async=True, timeout=None)
         
         result = pandas_query_engine.query(query)
         return f"Contexto do DataFrame: {df_info}\n\nResultado da Consulta:\n{str(result)}"
