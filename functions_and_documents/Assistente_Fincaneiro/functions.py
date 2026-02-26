@@ -17,7 +17,8 @@ from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
 from deep_translator import GoogleTranslator
 from llama_index.core.agent.workflow import AgentStream, ToolCallResult
-
+import multiprocessing
+multiprocessing.set_start_method("spawn", force=True)
 
 
 # ============================ Carregamento e indexação dos documentos em PDF =========================
@@ -79,7 +80,7 @@ async def run_agent(query):
     logs = ""
 
     try:        
-        handler = st.session_state.agent.run(query, early_sopping_method="generate", executor="process")
+        handler = st.session_state.agent.run(query, early_stopping_method="generate")
 
         # Captura de eventos para mostrar "pensamento" do Agente
         async for event in handler.stream_events():

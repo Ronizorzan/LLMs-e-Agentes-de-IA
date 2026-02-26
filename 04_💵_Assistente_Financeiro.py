@@ -156,7 +156,8 @@ if uploaded_file: # Primeira interação
                     
 
             elif uploaded_file.name.endswith(".xlsx"): # Processa arquivo Excel
-                df = pd.read_excel(path)                
+                df = pd.read_excel(path)
+                st.session_state["df"] = df
                 try:
                     df['date'] = pd.to_datetime(df['date'], errors='coerce') # Primeira tentativa de conversão
                 except:
@@ -222,12 +223,12 @@ if uploaded_file: # Primeira interação
                 content = "\n".join([doc.text for doc in docs])
                 st.session_state["summary"] = summary_docs(content[:15000])
             elif uploaded_file.name.endswith(".xlsx"):
-                if st.session_state.df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
-                    st.session_state.df = st.session_state.df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo                                    
+                if df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
+                    st.session_state.df = df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo                                    
                 st.session_state["summary"] = summary_docs(st.session_state.df.head(100).to_string())
             else:
-                if st.session_state.df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
-                    st.session_state.df = st.session_state.df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo                
+                if df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
+                    st.session_state.df = df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo                
                 st.session_state["summary"] = summary_docs(st.session_state.df.head(100).to_string())
                 
                            
