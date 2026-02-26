@@ -105,8 +105,8 @@ if model == "Groq":
 # Modelo Gemini substituído temporariamente para depuração
 elif model == "Gemini":    
     llm = Groq(model="moonshotai/kimi-k2-instruct-0905", temperature=0.15)
-#    llm = GoogleGenAI(model="models/gemini-2.5-flash",
- #                     temperature=0.15, api_key=os.getenv("GOOGLE_NEW_API_KEY"))
+    #llm = GoogleGenAI(model="models/gemini-2.5-flash",
+    #                  temperature=0.15, api_key=os.getenv("GOOGLE_NEW_API_KEY"))
 
 
 # Seta o LLM escolhido globalmente
@@ -130,18 +130,20 @@ if uploaded_file: # Primeira interação
                     st.session_state.df['date'] = pd.to_datetime(st.session_state.df['date'], errors='coerce') # Primeira tentativa de converter a coluna de data                    
                 
                 # Segunda tentativa de Conversão (Mais robusta)
-                except: # Se a conversão falhar, usa 'difflib' para selecionar a coluna mais parecida com 'date'
-                    target = "Date"
-                    columns = st.session_state.df.columns.tolist()
-                    date_col = difflib.get_close_matches(target, columns, n=1, cutoff=0)[0]                    
-                    st.session_state.df[date_col] = pd.to_datetime(st.session_state.df[date_col], errors='coerce', format="mixed")
-                
-                # Terceira e última tentativa de conversão
-                else:
+                except:
                     # Detectar e converter
                     for col in df.columns:
                         if is_date_column(df[col]):
                             df[col] = pd.to_datetime(df[col], errors="coerce")
+                    
+                
+                # Terceira e última tentativa de conversão
+                else:
+                    # Se as conversões falharem, usa 'difflib' para selecionar a coluna mais parecida com 'Date'
+                    target = "Date"
+                    columns = st.session_state.df.columns.tolist()
+                    date_col = difflib.get_close_matches(target, columns, n=1, cutoff=0)[0]                    
+                    st.session_state.df[date_col] = pd.to_datetime(st.session_state.df[date_col], errors='coerce', format="mixed")
 
                 finally:
                     main_tool = FunctionTool.from_defaults(
@@ -173,7 +175,7 @@ if uploaded_file: # Primeira interação
                 st.session_state["df"] = None # Zera o Arquivo dataframe
                 docs, index = load_and_index_documents(path)  # Carrega e indexa os documentos carregados
                 main_tool = QueryEngineTool(query_engine=index.as_query_engine(
-                    similarity_top_k=5, llm=llm, verbose=True),
+                    similarity_top_k=7, llm=llm, verbose=True),
                     metadata=ToolMetadata(
                         name="doc_search", description="FERRAMENTA PRINCIPAL. Use para acessar os dados do arquivo carregado (PDF). "
                                     "Use para responder perguntas de texto E TAMBÉM para buscar dados numéricos antes de criar gráficos." \
@@ -219,10 +221,14 @@ if uploaded_file: # Primeira interação
             if uploaded_file.name.endswith(".pdf"):
                 content = "\n".join([doc.text for doc in docs])
                 st.session_state["summary"] = summary_docs(content[:15000])
-            elif uploaded_file.name.endswith(".xlsx"):                
-                st.session_state["summary"] = summary_docs(st.session_state.df.head(200).to_string())
-            else:                
-                st.session_state["summary"] = summary_docs(st.session_state.df.head(200).to_string())
+            elif uploaded_file.name.endswith(".xlsx"):
+                if st.session_state.df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
+                    st.session_state.df = st.session_state.df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo                                    
+                st.session_state["summary"] = summary_docs(st.session_state.df.head(100).to_string())
+            else:
+                if st.session_state.df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
+                    st.session_state.df = st.session_state.df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo                
+                st.session_state["summary"] = summary_docs(st.session_state.df.head(100).to_string())
                 
                            
             st.toast("Resumo gerado com sucesso!", icon="✅")             
@@ -233,7 +239,8 @@ if uploaded_file: # Primeira interação
     chat_col, output_col = st.columns([0.35, 0.65], gap="large")    
     if st.session_state["summary"]: # Mostra o resumo apenas uma vez
         with output_col:
-            st.markdown("<h2 style='text-align: center; color: #B9B9B9;'>🟢 Insights Iniciais sobre o Documento</h2>", unsafe_allow_html=True)
+            st.markdown("<h2 style='text-align: center; color: #B9B9B9;'>✅ Insights Iniciais sobre o Documento</h2>", unsafe_allow_html=True)
+            st.markdown("<hr style='border: 1px solid; color: #008000'>", unsafe_allow_html=True)
             st.write(str(st.session_state["summary"]).replace("R$", "R\$").replace("<br>", "\n"))
             del st.session_state["summary"]
     
@@ -266,6 +273,7 @@ if uploaded_file: # Primeira interação
         # Renderiza a resposta do assistente
         with output_col:
             st.header("🎯 Resposta do Assistente Financeiro")
+            st.markdown("<hr style='border: 1px solid; color: #008000'>", unsafe_allow_html=True)
             with st.chat_message("assistant", avatar="ai"):
                 with st.status("🔍 Analisando dados e processando requisição...", expanded=True) as status:
                     query_engine = translate_content(query, source_lang="pt", target_lang="en") if translate_option else query                
