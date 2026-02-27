@@ -11,14 +11,13 @@ import re
 from pathlib import Path
 from typing import Union, Dict, List
 import pandas as pd
+import asyncio
 
 # ======================= Bibliotecas Principais ======================
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
 from deep_translator import GoogleTranslator
 from llama_index.core.agent.workflow import AgentStream, ToolCallResult
-import multiprocessing
-multiprocessing.set_start_method("spawn", force=True)
 
 
 # ============================ Carregamento e indexação dos documentos em PDF =========================
@@ -74,35 +73,39 @@ def is_date_column(series, threshold=0.9):
     return matches.mean() >= threshold
 
 # ==================== Execução do agente (Melhorado o Log) =========================
-async def run_agent(query):
+
+async def run_agent(query, timeout=30):
     old_stdout = sys.stdout
     sys.stdout = mystdout = io.StringIO()
     logs = ""
 
-    try:        
+    try:
         handler = st.session_state.agent.run(query, early_stopping_method="generate")
 
         # Captura de eventos para mostrar "pensamento" do Agente
         async for event in handler.stream_events():
             if isinstance(event, ToolCallResult):
-                # Formatação mais limpa para o log
                 sys.stdout.write(f"\n🛠️ **Usou ferramenta:** {event.tool_name}\n")
                 sys.stdout.write(f"   ARGS: {event.tool_kwargs}\n")
-                sys.stdout.write(f"   RETORNO: {str(event.tool_output)[:200]}...\n") # Limita tamanho do log
+                sys.stdout.write(f"   RETORNO: {str(event.tool_output)[:200]}...\n")
             elif isinstance(event, AgentStream):
-                # Opcional: imprimir o delta se quiser streaming de texto real
                 pass
-        
-        response = await handler
+
+        # Aqui usamos asyncio.wait_for em vez de signal
+        response = await asyncio.wait_for(handler, timeout=timeout)
         formatted_response = str(response.response)
-    
+
+    except asyncio.TimeoutError:
+        formatted_response = "⏱️ Tempo limite atingido, consulta cancelada."
+        sys.stdout.write("\nERRO CRÍTICO: Timeout\n")
+
     except Exception as e:
         formatted_response = f"Ocorreu um erro durante o processamento: {str(e)}"
         sys.stdout.write(f"\nERRO CRÍTICO: {str(e)}\n")
-    
+
     finally:
         sys.stdout = old_stdout
-    
+
     logs = mystdout.getvalue()
     return formatted_response, logs
 
