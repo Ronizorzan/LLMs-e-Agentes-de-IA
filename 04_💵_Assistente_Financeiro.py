@@ -40,7 +40,7 @@ def query_spreadsheet(query: str):
             "columns": list(df.columns),
             "dtypes": df.dtypes.astype(str).to_dict(),
             "rows": len(df),
-            "sample": df.head(3).to_dict(orient="records")
+            "sample": df.head(1).to_dict(orient="records")
         }
 
 
@@ -49,7 +49,7 @@ def query_spreadsheet(query: str):
         use_async=False, timeout=None)
         
         result = pandas_query_engine.query(query)
-        return f"Contexto do DataFrame: {df_info}\n\nResultado da Consulta:\n{str(result)}"
+        return f"Contexto do DataFrame: {df_info}\n--------\nResultado da Consulta:\n{str(result)}"
     except Exception as e:
         return f"Erro ao executar query no Pandas: {e}" 
            
@@ -97,11 +97,10 @@ if "chat_history" not in st.session_state:
 # Fallback para Modelo alternativo caso Haja muita requisições à API do Modelo
 if model == "Groq":
     try:
-        llm = Groq(model="moonshotai/kimi-k2-instruct", temperature=0.15)
+        llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)                        
     
-    except Exception:                
-        llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)                
-            
+    except Exception:
+        llm = Groq(model="moonshotai/kimi-k2-instruct", temperature=0.15)            
             
 # Modelo Gemini substituído temporariamente para depuração
 elif model == "Gemini":    
@@ -281,7 +280,7 @@ if uploaded_file: # Primeira interação
                     query_engine = translate_content(query, source_lang="pt", target_lang="en") if translate_option else query                
                     
                     try:
-                        response_text, agent_logs = asyncio.run(run_agent(query_engine))
+                        response_text, agent_logs = run_query_safe(query_engine)
                         final_response = translate_content(response_text, source_lang="en", target_lang="pt") if translate_option else response_text
                         status.update(label="✅ Análise concluída!", state="complete", expanded=False)
                         

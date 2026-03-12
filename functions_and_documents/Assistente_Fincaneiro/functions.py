@@ -73,16 +73,16 @@ def is_date_column(series, threshold=0.9):
     return matches.mean() >= threshold
 
 # ==================== Execução do agente (Melhorado o Log) =========================
-
 async def run_agent(query, timeout=30):
     old_stdout = sys.stdout
     sys.stdout = mystdout = io.StringIO()
     logs = ""
 
     try:
+        # Executa o agente
         handler = st.session_state.agent.run(query, early_stopping_method="generate")
 
-        # Captura de eventos para mostrar "pensamento" do Agente
+        # Captura eventos (para mostrar o "pensamento" do agente)
         async for event in handler.stream_events():
             if isinstance(event, ToolCallResult):
                 sys.stdout.write(f"\n🛠️ **Usou ferramenta:** {event.tool_name}\n")
@@ -91,7 +91,7 @@ async def run_agent(query, timeout=30):
             elif isinstance(event, AgentStream):
                 pass
 
-        # Aqui usamos asyncio.wait_for em vez de signal
+        # Timeout seguro usando asyncio.wait_for (não usa signal)
         response = await asyncio.wait_for(handler, timeout=timeout)
         formatted_response = str(response.response)
 
@@ -108,6 +108,29 @@ async def run_agent(query, timeout=30):
 
     logs = mystdout.getvalue()
     return formatted_response, logs
+
+
+# ==========================
+# CHAMADA SEGURA DO AGENTE (Para ambientes Linux)
+# ==========================
+
+def run_query_safe(query):
+    """Função que roda o agente sem dar erro em Linux/Windows."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        # Já existe um loop ativo (ex.: Streamlit)
+        # Usa create_task + gather em vez de asyncio.run
+        task = loop.create_task(run_agent(query))
+        response_text, agent_logs = loop.run_until_complete(asyncio.gather(task))[0]
+    else:
+        # Ambiente normal (sem loop rodando)
+        response_text, agent_logs = asyncio.run(run_agent(query))
+
+    return response_text, agent_logs
 
 # ==================== Função para salvar arquivo JSON (CORRIGIDA) =====================
 def save_json(data: Union[Dict, List[Dict]], file_path: Union[str, Path] = "financial_data.json") -> str:
