@@ -1,6 +1,6 @@
 # 🚀 Projetos com LLMs
 
-## 💻 Demo na nuvem (Assistente Financeiro) -> 
+## 💻 Demo na nuvem (Assistente Financeiro) ->  http://35.188.206.218:8501/
 
 *Este portfólio reúne projetos que utilizam **Modelos de Linguagem (LLMs)** para resolver diferentes problemas de negócio.*  
 *O repositório está em constante evolução: novas funções e páginas serão adicionadas gradualmente.*
