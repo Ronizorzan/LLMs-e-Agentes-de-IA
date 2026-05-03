@@ -1,3 +1,15 @@
+# ======================== Gerenciamento de Sinais do Python para Execução Assíncrona =======================
+import signal, threading
+
+# Patch para evitar erro fora da main thread (Extremamente importante para ambientes Linux, onde o gerenciamento de sinais é mais restrito)
+if threading.current_thread() is not threading.main_thread():
+    def _fake_signal(sig, handler):
+        # Ignora a tentativa de configurar sinais fora da thread principal
+        return handler
+    signal.signal = _fake_signal
+
+
+
 # ======================== Funções Adicionais =======================
 from functions_and_documents.Assistente_Fincaneiro.functions import *
 from functions_and_documents.ProjetoRAG.functions import markdown
