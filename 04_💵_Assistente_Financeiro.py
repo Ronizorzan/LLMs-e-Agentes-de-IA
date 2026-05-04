@@ -16,7 +16,7 @@ from functions_and_documents.ProjetoRAG.functions import markdown
 
 # ======================= Bibliotecas Principais ===========================
 from llama_index.llms.groq import Groq
-from llama_index.llms.google_genai import GoogleGenAI
+from llama_index.llms.mistral import Mistral
 from llama_index.core import Settings
 from llama_index.core.tools import ToolMetadata
 from llama_index.core.tools import QueryEngineTool
@@ -112,14 +112,11 @@ if model == "Groq":
         llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)                        
     
     except Exception:
-        llm = Groq(model="moonshotai/kimi-k2-instruct", temperature=0.15)            
+        llm = Groq(model="openai/gpt-oss-20b", temperature=0.15)            
             
 # Modelo Gemini substituído temporariamente para depuração
-elif model == "Gemini":    
-    llm = Groq(model="moonshotai/kimi-k2-instruct-0905", temperature=0.15)
-    #llm = GoogleGenAI(model="models/gemini-2.5-flash",
-    #                  temperature=0.15, api_key=os.getenv("GOOGLE_NEW_API_KEY"))
-
+elif model == "Mistral":    
+    llm = Mistral(model="mistral-large-latest", temperature=0.15)
 
 # Seta o LLM escolhido globalmente
 Settings.llm = llm

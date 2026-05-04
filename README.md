@@ -1,18 +1,15 @@
 # 🚀 Projetos com LLMs
 
-## 💻 Demo na nuvem (Assistente Financeiro) ->  http://35.188.206.218:8501/
-
-*Este portfólio reúne projetos que utilizam **Modelos de Linguagem (LLMs)** para resolver diferentes problemas de negócio.*  
-*O repositório está em constante evolução: novas funções e páginas serão adicionadas gradualmente.*
-*Cada arquivo representa uma solução prática para desafios comuns enfrentados por empresas.*
-*Os projetos foram desenvolvidos para serem* ***facilmente adaptáveis***
-*a diferentes contextos, bastando ajustes simples em lógicas, prompts e dados.*
+- *Este portfólio reúne projetos que utilizam **Modelos de Linguagem (LLMs)** para resolver diferentes problemas de negócio.*  
+- *O repositório está em constante evolução: novas funções e páginas serão adicionadas gradualmente.*
+- *Cada arquivo representa uma solução prática para desafios comuns enfrentados por empresas.*
+- *Os projetos foram desenvolvidos para serem* ***facilmente adaptáveis***
+- *a diferentes contextos, bastando ajustes simples em lógicas, prompts e dados.*
 
 ---
 
-## 📂 Estrutura do Repositório
 
-### [`functions_and_documents`](functions_and_documents)
+## [`functions_and_documents`](functions_and_documents)
 - *Contém funções auxiliares e documentos adicionais, organizados por projeto para garantir controle e clareza.*
 
 #### [`functions_and_documents/Gerador_de_Conteudo/functions.py`](functions_and_documents/Gerador_de_Conteudo/functions.py)  
@@ -29,10 +26,10 @@
 
 ---
 
-### `Projetos disponíveis`
+## `Projetos disponíveis`
 Projetos prontos para execução via arquivos `.py`.
 
-#### 1) [Chatbot - Projeto RAG](01_💬_Projeto_RAG.py)
+### 1) [Chatbot - Projeto RAG](01_💬_Projeto_RAG.py)
 **Projeto principal – Autoatendimento Personalizado com RAG**  
 - Modelo que responde a perguntas e dúvidas de clientes com base em documentos da empresa.  
 - Respostas rápidas e contextualizadas a partir de PDFs.  
@@ -44,7 +41,7 @@ Projetos prontos para execução via arquivos `.py`.
 
 ---
 
-#### 2) [Marketing - Geração de Conteúdo](02_🧲_Gerador_de_Conteudo.py)
+### 2) [Marketing - Geração de Conteúdo](02_🧲_Gerador_de_Conteudo.py)
 **Geração de Conteúdo Dinâmico para Marketing**  
 - Criação de conteúdos personalizados para redes sociais (Facebook, LinkedIn, Instagram, etc).  
 - Interface simples para engenharia de prompts sem necessidade de conhecimento técnico.  
@@ -56,7 +53,7 @@ Projetos prontos para execução via arquivos `.py`.
 
 ---
 
-#### 3)[Educação - Exercícios e Tutor Digital](03_👨‍🎓_Gerador_de_Exercicios.py)
+### 3)[Educação - Exercícios e Tutor Digital](03_👨‍🎓_Gerador_de_Exercicios.py)
 **Geração de Exercícios para professores**
 - Criação de exercícios personalizados para estudantes de diversas áreas.
 - Interface pronta para utilização e altamente personalizável com possibilidade de exportações de documentos em DOCX.
@@ -68,7 +65,7 @@ Projetos prontos para execução via arquivos `.py`.
 
 ---
 
-#### 4)[Finanças - Assistente Financeiro](04_💵_Assistente_Financeiro.py)
+### 4)[Finanças - Assistente Financeiro](04_💵_Assistente_Financeiro.py)
 **Agente Inteligente - Insights Instantâneos sobre finanças**
 - Entrega de recomendações personalizadas com base em necessidades reais da empresa.
 - Relatórios e resumos gerados em tempo real com base em documentos da empresa.
@@ -89,7 +86,7 @@ Projetos prontos para execução via arquivos `.py`.
 
 ---
 
-### ⚙️ Instalação
+## ⚙️ Instalação
 
 **Clone o repositório e instale as dependências:**
 - git clone https://github.com/Ronizorzan/LLMs-e-Agentes-de-IA.git
@@ -97,19 +94,16 @@ Projetos prontos para execução via arquivos `.py`.
 - pip install -e .
 
 
-▶️ Uso
-Execute o projeto com:
-streamlit run nome_do_arquivo_principal.py
+## ▶️ Uso
+### Execute o projeto com:
+> streamlit run nome_do_arquivo_principal.py
 
 
-Acesse no navegador:
-http://localhost:8501
+### Acesse no navegador:
+> http://localhost:8501
 
 
-Crie um arquivo `.env` na raiz do projeto e adicione sua chave da Groq API, Gemini API, etc:
-GROQ_API_KEY=suachaveaqui
-GOOGLE_API_KEY=suachaveaqui
+- Crie um arquivo `.env` na raiz do projeto e adicione sua chave da Groq API, Gemini API, etc:
+- > GROQ_API_KEY=suachaveaqui
+- > GOOGLE_API_KEY=suachaveaqui
 
-
-## 📌 Status
-🔧 Em desenvolvimento contínuo – novas funcionalidades e projetos serão adicionados regularmente.
