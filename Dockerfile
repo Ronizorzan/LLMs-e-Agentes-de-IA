@@ -10,6 +10,9 @@ RUN pip install uv
 # Copia os arquivos de dependências
 COPY requirements.txt .
 
+# Lista o arquivo para checagem
+RUN ls -l requirements.txt
+
 # Instala as dependências
 RUN uv pip install -r requirements.txt
 
