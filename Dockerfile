@@ -11,7 +11,7 @@ RUN pip install uv
 COPY requirements.txt .
 
 # Instala as dependências
-RUN uv pip install -r requiremets.txt
+RUN uv pip install -r requirements.txt
 
 # Copia o restante do projeto
 COPY . .
