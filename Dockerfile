@@ -5,7 +5,7 @@ FROM python:3.11-slim
 WORKDIR /app
 
 # Instala uv (sem precisar do pip install uv separado)
-RUN pip install uv
+RUN pip install uv --no-cache-dir
 
 # Copia os arquivos de dependências
 COPY requirements.txt .
@@ -14,7 +14,7 @@ COPY requirements.txt .
 RUN ls -l requirements.txt
 
 # Instala as dependências
-RUN uv pip install -r requirements.txt
+RUN uv pip install -r requirements.txt --system
 
 # Copia o restante do projeto
 COPY . .
