@@ -183,7 +183,7 @@ def generate_graphs(
         Nome da coluna que será usada no eixo X.
     col_y : str, default="revenue"
         Nome da coluna que será usada no eixo Y.
-    graph_type : {"bar", "line", "scatter", "gauge"}, default="bar"
+    graph_type : {"bar", "line", "scatter", "gauge", "donut", "treemap"}, default="bar"
         Tipo de gráfico desejado.
     color_map : str, default="#302DF1"
         Cor principal do gráfico (hexadecimal ou nome).
@@ -231,15 +231,27 @@ def generate_graphs(
     try:
         if graph_type == "bar":
             fig.add_trace(go.Bar(x=df[col_x], y=df[col_y], name=col_y, marker_color=color_map))
+
         elif graph_type == "line":
             fig.add_trace(go.Scatter(x=df[col_x], y=df[col_y], mode='lines+markers', line=dict(color=color_map)))
+
         elif graph_type == "scatter":
             fig.add_trace(go.Scatter(x=df[col_x], y=df[col_y], mode='markers', marker=dict(color=color_map, size=10)))
+
         elif graph_type == "gauge":
              fig.add_trace(go.Indicator(
                 mode="gauge+number", value=df[col_y].iloc[-1],
-                gauge={'axis': {'range': [None, df[col_y].max()*1.2]}, 'bar': {'color': color_map}}
+                gauge={'axis': {'range': [None, df[col_y].max()*1.2]}, 'bar': {'color': color_map}}            
             ))
+             
+        elif graph_type=="donut":
+            fig.add_trace(go.Pie(labels=df[col_x], values=df[col_y],
+                                 hole=0.4, marker=dict(colors=[color_map])))
+        
+        elif graph_type=="treemap":
+            fig.add_trace(go.Treemap(labels=df[col_x], parents=[""]* len(df[col_x]),
+                                     values=df[col_y], marker=dict(colors=[color_map])))               
+
         else:
             return f"Tipo de gráfico '{graph_type}' não suportado."
 

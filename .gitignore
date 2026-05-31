@@ -1,17 +1,23 @@
+# Checkpoint files
 .ipynb_checkpoints
-.env
-*.ipynb
-.idea
-.pdm-python
-pdm.lock
-.ipynb_checkpoints/
 __pycache__/
 tests/
 src/
 __pycache__/
+Solucoes_com_LLMs.egg-info
+
+# Env Varibles 
+.env
+
+# Python files
+*.ipynb
+.idea
+.pdm-python
+pdm.lock
+.venv
+
+# Files
 *.csv
 *.pdf
-.idea/
-tests/
 *.json
 *.md

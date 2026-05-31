@@ -11,13 +11,13 @@ RUN pip install uv
 COPY requirements.txt .
 
 # Instala as dependências
-RUN uv pip install .
+RUN uv pip install -r requiremets.txt
 
 # Copia o restante do projeto
 COPY . .
 
 # Expõe a porta padrão do Streamlit
-EXPOSE 8502
+EXPOSE 8501
 
 # Comando para rodar o Streamlit
-CMD ["streamlit", "run", "04_💵_Assistente_Financeiro.py", "--server.port=8502"]
+CMD ["streamlit", "run", "04_💵_Assistente_Financeiro.py", "--server.port=8501"]

@@ -21,9 +21,18 @@ dependencies = [
     "langchain-openai>=1.1.7",
     "pymupdf>=1.26.7",
     "llama-index>=0.14.13",
+    "llama-index-experimental",
+    "llama-index-embeddings-huggingface",
+    "llama-index-llms-groq",
+    "llama-index-llms-cohere",
     "polars",
     "mistralai",
-    "langchain-mistralai"
+    "langchain-mistralai",
+    "plotly",
+    "python-dotenv",
+    "deep-translator",
+    "faiss-cpu",
+    "sentence-transformers"
 ]
 requires-python = ">=3.10"
 readme = "README.md"

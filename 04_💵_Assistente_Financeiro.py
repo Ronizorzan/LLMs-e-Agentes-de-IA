@@ -1,4 +1,5 @@
 # ======================== Gerenciamento de Sinais do Python para Execução Assíncrona =======================
+# ====================  IMPORTANTÍSSIMO EM SISTEMAS LINUX ============================
 import signal, threading
 
 # Patch para evitar erro fora da main thread (Extremamente importante para ambientes Linux, onde o gerenciamento de sinais é mais restrito)
@@ -16,7 +17,7 @@ from functions_and_documents.ProjetoRAG.functions import markdown
 
 # ======================= Bibliotecas Principais ===========================
 from llama_index.llms.groq import Groq
-from llama_index.llms.mistral import Mistral
+from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
 from llama_index.core.tools import ToolMetadata
 from llama_index.core.tools import QueryEngineTool
@@ -75,13 +76,14 @@ st.set_page_config(page_title="Assistente Financeiro", layout="wide", page_icon=
 
 # -------------------- Sidebar (Estilização, Contato e seleção de Modelo)
 with st.sidebar:
-    st.image("https://www.bing.com/th/id/OIG3.1XJ31rftz4RgJmLBOJOq?w=540&h=540&c=6&r=0&o=5&cb=defcachec2&pid=ImgGn", width=225)    
+    st.image("https://th.bing.com/th/id/OIG3.8LLduKEW1Sddr_p7bGiJ?w=270&h=270&c=6&r=0&o=5&pid=ImgGn", width=225)    
     st.markdown("")
     uploaded_file = st.file_uploader("**💵 Carregue um documento\
                                      \npara iniciar a Análise Financeira**",
                                 type=["pdf", "csv", "xlsx"], accept_multiple_files=False) # Botão de Upload fixo na Barra Lateral
     with st.expander("**🔧 Seleção da IA**"):
-        model = st.selectbox("🔍 Selecione o Provedor do LLM", ["Groq", "Gemini"])            
+        model = st.selectbox("🔍 Selecione o Provedor do LLM", 
+                             ["Groq (Velocidade insuperável)", "OpenAI (Raciocínio Avançado)"])
 
     with st.expander("**Contato e Assistência**", expanded=False, icon="✉️"):
         st.markdown(markdown, unsafe_allow_html=True)
@@ -106,17 +108,17 @@ if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
 
        
-# Fallback para Modelo alternativo caso Haja muita requisições à API do Modelo
-if model == "Groq":
+if model == "Groq (Velocidade insuperável)":
     try:
-        llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)                        
+        llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)        
     
+    # Fallback para Modelo alternativo caso Haja muita requisições à API do Modelo
     except Exception:
-        llm = Groq(model="openai/gpt-oss-20b", temperature=0.15)            
+        llm = Groq(model="meta-llama/llama-prompt-guard-2-22m", temperature=0.15)                
             
-# Modelo Gemini substituído temporariamente para depuração
-elif model == "Mistral":    
-    llm = Mistral(model="mistral-large-latest", temperature=0.15)
+# Modelo Mistral como opção alternativa, caso o Groq esteja indisponível ou para comparação de resultados
+elif model == "OpenAI (Raciocínio Avançado)":
+    llm = OpenAI(model="gpt-4o-mini", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))
 
 # Seta o LLM escolhido globalmente
 Settings.llm = llm
@@ -204,7 +206,7 @@ if uploaded_file: # Primeira interação
             
             # --- SYSTEM PROMPT (INDISPENSÁVEL PARA AGENTES INTELIGENTES) ---
             system_prompt = """
-            Você é um Assistente Financeiro Especialista capaz de analisar dados e gerar gráficos.
+            Você é um Assistente Financeiro Especialista, capaz de analisar dados e gerar gráficos e relatórios executivos de alto impacto para o negócio.
             
             REGRAS CRITICAS:
             1. O usuário JÁ CARREGOU um arquivo de dados. Ele está disponível através da ferramenta 'query_spreadsheet' ou 'doc_search' (PARA PDFs).
@@ -213,9 +215,12 @@ if uploaded_file: # Primeira interação
             a. Primeiro, use 'query_spreadsheet' para extrair os dados necessários.
             b. Segundo, formate esses dados internamente e use 'save_json'.
             c. Terceiro, use 'generate_graphs' com o caminho do arquivo salvo.
-            d. As cores, títulos e outras personalizações ficam a seu critério. Estilize de forma a manter o gráfico informativo e impactante. Use nomes descritivos e impactantes para o título e os eixos.
+            d. As cores, títulos, gráficos e outras personalizações ficam a seu critério. Estilize de forma a manter o gráfico informativo e impactante. 
+            Use nomes descritivos e impactantes para o título e os eixos.
             4. Responda sempre em Português do Brasil.
-            5. Se fizer sentido no contexto, retorne em sua resposta final uma conclusão com análises e recomendações relevantes para o negócio, sem menções a detalhes técnicos ou a campos específicos do conjunto de dados.
+            5. Se fizer sentido no contexto, retorne em sua resposta final uma conclusão com análises e recomendações relevantes para o negócio, 
+            sem menções a detalhes técnicos ou a campos específicos do conjunto de dados.
+            6. O relatório final deve ser claro, objetivo e voltado para a tomada de decisão, destacando os insights mais relevantes encontrados nos dados.
             """
             
             # Atribui as ferramentas ao Agente 
@@ -227,18 +232,18 @@ if uploaded_file: # Primeira interação
             if st.session_state["agent"] is None or st.session_state["docs_list"] != uploaded_file:
                 st.session_state["agent"] = agent
                 st.session_state["docs_list"] = uploaded_file                        
-
+            
             if uploaded_file.name.endswith(".pdf"):
                 content = "\n".join([doc.text for doc in docs])
                 st.session_state["summary"] = summary_docs(content[:15000])
             elif uploaded_file.name.endswith(".xlsx"):
                 if df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
-                    st.session_state.df = df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo                                    
-                st.session_state["summary"] = summary_docs(st.session_state.df.head(100).to_string())
-            else:
+                    st.session_state.df = df.iloc[:, :5] # Mantém apenas as 5 primeiras colunas para o resumo                                    
+                st.session_state["summary"] = summary_docs(st.session_state.df.head(100)[:10000])
+            elif uploaded_file.name.endswith("csv"):
                 if df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
-                    st.session_state.df = df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo                
-                st.session_state["summary"] = summary_docs(st.session_state.df.head(100).to_string())
+                    st.session_state.df = df.iloc[:, :5] # Mantém apenas as 5 primeiras colunas para o resumo
+                st.session_state["summary"] = summary_docs(st.session_state.df.head(100)[:10000])
                 
                            
             st.toast("Resumo gerado com sucesso!", icon="✅")             
@@ -251,7 +256,7 @@ if uploaded_file: # Primeira interação
         with output_col:
             st.markdown("<h2 style='text-align: center; color: #B9B9B9;'>✅ Insights Iniciais sobre o Documento</h2>", unsafe_allow_html=True)
             st.markdown("<hr style='border: 1px solid; color: #008000'>", unsafe_allow_html=True)
-            st.write(str(st.session_state["summary"]).replace("R$", "R\$").replace("<br>", "\n"))
+            st.write(str(st.session_state["summary"]).replace("<br>", "\n"))
             del st.session_state["summary"]
     
     
@@ -300,14 +305,14 @@ if uploaded_file: # Primeira interação
                         agent_logs = traceback.format_exc()
 
                 # Lógica de renderização Profissional com ABAS (Tabs)
-                final_response = str(final_response).replace("assistant", "**Assistente**").replace("<br>", "\n").replace("R$", "R\$")
+                final_response = str(final_response).replace("assistant", "## **Assistente**\n").replace("<br>", "\n")
                 if os.path.exists(static_graph_path):
                     tab1, tab2, tab3 = st.tabs(["📊 Gráfico Gerado", "💬 Análise Detalhada", "🛠️ Logs Técnicos"])
                     
                     with tab1:
                         fig = pio.read_json(static_graph_path)
                         # Renderização do Gráfico aqui:
-                        st.plotly_chart(fig, use_container_width=True) 
+                        st.plotly_chart(fig, width="stretch") 
                     
                     with tab2:
                         # Resposta Final do Modelo
