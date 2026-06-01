@@ -42,9 +42,13 @@ load_dotenv()
 def query_spreadsheet(query: str):
     """
     Ferramenta Principal. Use para consultar o DataFrame carregado.
-    Se precisar extrair dados para gráficos, peça explicitamente os dados brutos 
+    Se precisar extrair dados para gráficos, peça explicitamente os dados 
     nesta query para depois passar para o save_json.
     Não utilize SQL. Utilize somente comandos do Pandas para executar a consulta no DataFrame.
+    
+    **Importante (O RESUMO ABAIXO É SEU MAIOR ALIADO):**
+    SEMPRE utilize o resumo retornado em 'Contexto do DataFrame' para conhecer a estrutura dos dados.
+    O objetivo é minimizar as consultas à essa ferramenta.
     """    
           
     try:
@@ -53,7 +57,11 @@ def query_spreadsheet(query: str):
             "columns": list(df.columns),
             "dtypes": df.dtypes.astype(str).to_dict(),
             "rows": len(df),
-            "sample": df.head(1).to_dict(orient="records")
+            "sample": df.head(1).to_dict(orient="records"),
+            "agregate_info": {
+            "numerical_summary": df.describe().iloc[:, :5].to_dict(),         # Limita os resumos às 5 primeiras colunas para evitar sobrecarga de tokens
+            "categorical_summary": df.describe(include=["object", "category"]).iloc[:, :5].to_dict()
+            }
         }
 
 
@@ -65,6 +73,27 @@ def query_spreadsheet(query: str):
         return f"Contexto do DataFrame: {df_info}\n--------\nResultado da Consulta:\n{str(result)}"
     except Exception as e:
         return f"Erro ao executar query no Pandas: {e}" 
+    
+
+# ==================== Configuração de Múltiplos Modelos com Fallback Inteligente =========================
+models = [
+    "openai/gpt-oss-120b",    
+    "openai/gpt-oss-20b", 
+    "meta-llama/llama-prompt-guard-2-22m",   
+    "gemma/gemma-2-9b-it"
+]
+
+@st.cache_resource(show_spinner=False)
+def get_llm_with_fallback(temperature=0.15):
+    for model in models:
+        try:
+            return Groq(model=model, temperature=temperature, api_key=os.getenv("GROQ_API_KEY"))
+        except Exception as e:
+            st.write(f"Erro com {model}: {e}")
+            continue
+    
+    raise RuntimeError("Nenhum modelo disponível no momento.")
+
            
 
 
@@ -83,7 +112,7 @@ with st.sidebar:
                                 type=["pdf", "csv", "xlsx"], accept_multiple_files=False) # Botão de Upload fixo na Barra Lateral
     with st.expander("**🔧 Seleção da IA**"):
         model = st.selectbox("🔍 Selecione o Provedor do LLM", 
-                             ["Groq (Velocidade insuperável)", "OpenAI (Raciocínio Avançado)"])
+                             ["🧠 OpenAI (Raciocínio Avançado)", "⚡ Groq (Velocidade insuperável)"], index=1)
 
     with st.expander("**Contato e Assistência**", expanded=False, icon="✉️"):
         st.markdown(markdown, unsafe_allow_html=True)
@@ -108,16 +137,19 @@ if "chat_history" not in st.session_state:
     st.session_state["chat_history"] = []
 
        
-if model == "Groq (Velocidade insuperável)":
+if model == "⚡ Groq (Velocidade insuperável)":
     try:
-        llm = Groq(model="openai/gpt-oss-120b", temperature=0.15)        
+        llm = get_llm_with_fallback(temperature=0.15)
+    except Exception as e:
+        st.error(str(e))
+
+        # Fallback para OpenAI se o Groq estiver indisponível, garantindo que o app continue funcional mesmo em caso de falhas com o modelo principal
+        llm = OpenAI(model="gpt-4o-mini", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))        
     
-    # Fallback para Modelo alternativo caso Haja muita requisições à API do Modelo
-    except Exception:
-        llm = Groq(model="meta-llama/llama-prompt-guard-2-22m", temperature=0.15)                
+    llm = get_llm_with_fallback(temperature=0.15)
             
 # Modelo Mistral como opção alternativa, caso o Groq esteja indisponível ou para comparação de resultados
-elif model == "OpenAI (Raciocínio Avançado)":
+elif model == "🧠 OpenAI (Raciocínio Avançado)":
     llm = OpenAI(model="gpt-4o-mini", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))
 
 # Seta o LLM escolhido globalmente
@@ -210,7 +242,7 @@ if uploaded_file: # Primeira interação
             
             REGRAS CRITICAS:
             1. O usuário JÁ CARREGOU um arquivo de dados. Ele está disponível através da ferramenta 'query_spreadsheet' ou 'doc_search' (PARA PDFs).
-            2. NÃO pergunte ao usuário pelo arquivo. Use a ferramenta de acordo com a descrição para ver o que tem dentro.
+            2. NÃO pergunte ao usuário pelo arquivo. Use a ferramenta de acordo com a descrição para ver o que tem dentro.            
             3. Se o usuário pedir um gráfico:
             a. Primeiro, use 'query_spreadsheet' para extrair os dados necessários.
             b. Segundo, formate esses dados internamente e use 'save_json'.
@@ -220,7 +252,8 @@ if uploaded_file: # Primeira interação
             4. Responda sempre em Português do Brasil.
             5. Se fizer sentido no contexto, retorne em sua resposta final uma conclusão com análises e recomendações relevantes para o negócio, 
             sem menções a detalhes técnicos ou a campos específicos do conjunto de dados.
-            6. O relatório final deve ser claro, objetivo e voltado para a tomada de decisão, destacando os insights mais relevantes encontrados nos dados.
+            6. Limite as consultas à ferramenta de dados (query_spreadsheet ou doc_search) para o mínimo necessário. Use o resumo do DataFrame para acelerar seu entendimento dos dados e evitar consultas desnecessárias.
+            7. O relatório final deve ser claro, objetivo e voltado para a tomada de decisão, destacando os insights mais relevantes encontrados nos dados.
             """
             
             # Atribui as ferramentas ao Agente 
@@ -307,7 +340,7 @@ if uploaded_file: # Primeira interação
                 # Lógica de renderização Profissional com ABAS (Tabs)
                 final_response = str(final_response).replace("assistant", "## **Assistente**\n").replace("<br>", "\n")
                 if os.path.exists(static_graph_path):
-                    tab1, tab2, tab3 = st.tabs(["📊 Gráfico Gerado", "💬 Análise Detalhada", "🛠️ Logs Técnicos"])
+                    tab1, tab2, tab3 = st.tabs(["📊 Gráfico Gerado", "💬 Análise Detalhada", "🛠️ Logs Técnicos"], default="💬 Análise Detalhada")
                     
                     with tab1:
                         fig = pio.read_json(static_graph_path)

@@ -144,8 +144,8 @@ def chat_llm_streamlit(rag_chain, chat_input):
 markdown = """
 <div class="footer">
     <p><strong>Desenvolvido por: Ronivan</strong></p>
-    <a href="http://107.22.129.114:5678/webhook/4091fa09-fb9a-4039-9411-7104d213f601/chat" target="_blank">
-        <img src="https://cdn-icons-gif.flaticon.com/15579/15579184.gif" alt="Film Reel Icon">
+    <a href="https://showcase-data-science-roni.lovable.app" target="_blank">
+        <img src="https://cdn-icons-gif.flaticon.com/10690/10690695.gif" alt="Film Reel Icon">
     </a>
     <a href="https://github.com/Ronizorzan/LLMs-e-Agentes-de-IA" target="_blank">
         <img src="https://cdn-icons-png.flaticon.com/128/536/536452.png" alt="GitHub">

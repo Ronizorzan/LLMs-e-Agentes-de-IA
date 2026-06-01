@@ -14,7 +14,11 @@ COPY requirements.txt .
 RUN ls -l requirements.txt
 
 # Instala as dependências
-RUN uv pip install -r requirements.txt --system
+RUN uv pip install -r requirements.txt --system 
+
+RUN uv pip install --upgrade mistralai langchain-mistralai --system --no-cache-dir --force-reinstall
+
+RUN pip install transformers -U
 
 # Copia o restante do projeto
 COPY . .
