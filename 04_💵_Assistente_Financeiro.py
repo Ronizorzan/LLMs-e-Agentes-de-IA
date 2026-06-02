@@ -31,8 +31,10 @@ import pandas as pd
 import tempfile
 import asyncio
 import traceback
+import time
 import os
 import difflib
+from textwrap import dedent
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -44,11 +46,11 @@ def query_spreadsheet(query: str):
     Ferramenta Principal. Use para consultar o DataFrame carregado.
     Se precisar extrair dados para gráficos, peça explicitamente os dados 
     nesta query para depois passar para o save_json.
-    Não utilize SQL. Utilize somente comandos do Pandas para executar a consulta no DataFrame.
+    Não utilize SQL. Utilize somente comandos do Pandas para executar a consulta no DataFrame.    
     
-    **Importante (O RESUMO ABAIXO É SEU MAIOR ALIADO):**
-    SEMPRE utilize o resumo retornado em 'Contexto do DataFrame' para conhecer a estrutura dos dados.
-    O objetivo é minimizar as consultas à essa ferramenta.
+    **MUITO IMPORTANTE (O RESUMO ABAIXO É SEU MAIOR ALIADO) E O PANDAS (para consultas mais complexas):**
+    SEMPRE utilize o resumo retornado em 'Contexto do DataFrame' para conhecer a estrutura dos dados. O objetivo é minimizar as consultas à essa ferramenta.
+    Se precisar chamar o pandas explicitamente para alguma operação, NÃO SE ESQUEÇA DE IMPORTÁ-LO com 'import pandas as pd' na mesma consulta.
     """    
           
     try:
@@ -83,11 +85,12 @@ models = [
     "gemma/gemma-2-9b-it"
 ]
 
-@st.cache_resource(show_spinner=False)
+@st.cache_resource(show_spinner=True)
 def get_llm_with_fallback(temperature=0.15):
     for model in models:
         try:
             return Groq(model=model, temperature=temperature, api_key=os.getenv("GROQ_API_KEY"))
+            st.info(f"Usando modelo: {model}")
         except Exception as e:
             st.write(f"Erro com {model}: {e}")
             continue
@@ -112,7 +115,7 @@ with st.sidebar:
                                 type=["pdf", "csv", "xlsx"], accept_multiple_files=False) # Botão de Upload fixo na Barra Lateral
     with st.expander("**🔧 Seleção da IA**"):
         model = st.selectbox("🔍 Selecione o Provedor do LLM", 
-                             ["🧠 OpenAI (Raciocínio Avançado)", "⚡ Groq (Velocidade insuperável)"], index=1)
+                             ["🧠 OpenAI (Raciocínio Avançado)", "⚡ Groq (Velocidade insuperável)"], index=0)
 
     with st.expander("**Contato e Assistência**", expanded=False, icon="✉️"):
         st.markdown(markdown, unsafe_allow_html=True)
@@ -150,7 +153,7 @@ if model == "⚡ Groq (Velocidade insuperável)":
             
 # Modelo Mistral como opção alternativa, caso o Groq esteja indisponível ou para comparação de resultados
 elif model == "🧠 OpenAI (Raciocínio Avançado)":
-    llm = OpenAI(model="gpt-4o-mini", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))
+    llm = OpenAI(model="gpt-5-nano", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))
 
 # Seta o LLM escolhido globalmente
 Settings.llm = llm
@@ -167,7 +170,7 @@ if uploaded_file: # Primeira interação
                 path = tmp_file.name
             
             if uploaded_file.name.endswith(".csv"): # Processa arquivo CSV                
-                df = pd.read_csv(path, sep=None, engine="python")     # Descobre o delimitador dinamicamente utilizando python           
+                df = pd.read_csv(path, sep=None, engine="python").dropna()     # Descobre o delimitador dinamicamente utilizando python           
                 st.session_state["df"] = df
                 try:
                     st.session_state.df['date'] = pd.to_datetime(st.session_state.df['date'], errors='coerce') # Primeira tentativa de converter a coluna de data                    
@@ -199,7 +202,7 @@ if uploaded_file: # Primeira interação
                     
 
             elif uploaded_file.name.endswith(".xlsx"): # Processa arquivo Excel
-                df = pd.read_excel(path)
+                df = pd.read_excel(path).dropna()
                 st.session_state["df"] = df
                 try:
                     df['date'] = pd.to_datetime(df['date'], errors='coerce') # Primeira tentativa de conversão
@@ -237,24 +240,26 @@ if uploaded_file: # Primeira interação
                             "Argumentos obrigatórios: json_path (retornado pelo save_json), col_x, col_y.")
             
             # --- SYSTEM PROMPT (INDISPENSÁVEL PARA AGENTES INTELIGENTES) ---
-            system_prompt = """
+            system_prompt = dedent("""
             Você é um Assistente Financeiro Especialista, capaz de analisar dados e gerar gráficos e relatórios executivos de alto impacto para o negócio.
             
             REGRAS CRITICAS:
-            1. O usuário JÁ CARREGOU um arquivo de dados. Ele está disponível através da ferramenta 'query_spreadsheet' ou 'doc_search' (PARA PDFs).
-            2. NÃO pergunte ao usuário pelo arquivo. Use a ferramenta de acordo com a descrição para ver o que tem dentro.            
+            1. O usuário JÁ CARREGOU um arquivo de dados. Ele está disponível através da ferramenta 'query_spreadsheet' ou 'doc_search' (PARA PDFs). Use-a para acessar os dados.
+            2. Não se esqueça de escapar corretamente os caracteres, se necessário.
+
             3. Se o usuário pedir um gráfico:
-            a. Primeiro, use 'query_spreadsheet' para extrair os dados necessários.
+            a. Primeiro, use 'query_spreadsheet' para extrair os dados necessários (ou para conhecê-los, se necessário).
             b. Segundo, formate esses dados internamente e use 'save_json'.
-            c. Terceiro, use 'generate_graphs' com o caminho do arquivo salvo.
+            c. Terceiro, use 'generate_graphs' com o caminho do arquivo salvo (NÃO ADICIONE DADOS ZERADOS, NEM NADA DO TIPO - Mantenha o gráfico útil, informativo e impactante).
             d. As cores, títulos, gráficos e outras personalizações ficam a seu critério. Estilize de forma a manter o gráfico informativo e impactante. 
             Use nomes descritivos e impactantes para o título e os eixos.
             4. Responda sempre em Português do Brasil.
             5. Se fizer sentido no contexto, retorne em sua resposta final uma conclusão com análises e recomendações relevantes para o negócio, 
             sem menções a detalhes técnicos ou a campos específicos do conjunto de dados.
             6. Limite as consultas à ferramenta de dados (query_spreadsheet ou doc_search) para o mínimo necessário. Use o resumo do DataFrame para acelerar seu entendimento dos dados e evitar consultas desnecessárias.
-            7. O relatório final deve ser claro, objetivo e voltado para a tomada de decisão, destacando os insights mais relevantes encontrados nos dados.
-            """
+            7. Se o usuário inserir perguntas sem detalhes objetivos (como compare receita e despesas), siga um plano padrão comum e útil para tomada de decisão (não pergunte que tipo de informação o usuário prefere).
+            8. O relatório final deve ser claro, objetivo e voltado para a tomada de decisão, destacando os insights mais relevantes encontrados nos dados.
+            """)
             
             # Atribui as ferramentas ao Agente 
             agent = FunctionAgent(tools=[main_tool, json_save_tool, graph_tool], 
@@ -267,6 +272,8 @@ if uploaded_file: # Primeira interação
                 st.session_state["docs_list"] = uploaded_file                        
             
             if uploaded_file.name.endswith(".pdf"):
+                st.toast("O carregamento inicial de documentos em PDF requer um maior tempo de processamento." \
+                " Por favor, aguarde um instante enquanto o documento é processado.", icon="⏳", duration="long")
                 content = "\n".join([doc.text for doc in docs])
                 st.session_state["summary"] = summary_docs(content[:15000])
             elif uploaded_file.name.endswith(".xlsx"):
@@ -327,8 +334,12 @@ if uploaded_file: # Primeira interação
                     query_engine = translate_content(query, source_lang="pt", target_lang="en") if translate_option else query                
                     
                     try:
-                        response_text, agent_logs = run_query_safe(query_engine)
+                        time_before = time.time()
+                        status.update(label="⏳ Não se esqueça. Pergutas mais complexas podem demandar mais tempo de processamento.", state="running", expanded=True)
+                        response_text, agent_logs = run_query_safe(query_engine)                        
                         final_response = translate_content(response_text, source_lang="en", target_lang="pt") if translate_option else response_text
+                        time_after = time.time()
+                        st.toast(f"O Agente pensou por: {round(time_after - time_before, 2)} segundos\nObrigado por aguardar!", icon="⏱️", duration="long")
                         status.update(label="✅ Análise concluída!", state="complete", expanded=False)
                         
                     except Exception as e:

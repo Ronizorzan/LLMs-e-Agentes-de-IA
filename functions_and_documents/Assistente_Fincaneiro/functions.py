@@ -38,9 +38,11 @@ def summary_docs(content: str):
     template = """
     Você é um analista financeiro com vasta experiência em análise financeira.
     Ao ler o relatório a seguir, extraia insights financeiros relevantes e explique-os de forma clara, didática e resumida, como se estivesse apresentando para gestores não especialistas.
-    Utilize linguagem acessível e destaque pontos importantes sobre lucros, despesas, fluxo de caixa, riscos e oportunidades.
+    Utilize linguagem acessível e destaque pontos importantes sobre lucros, despesas, fluxo de caixa.
+    Riscos e oportunidades encontrados nos dados devem ser sempre o foco principal da análise.
+    Atente-se sempre para a clareza e objetividade, evitando jargões técnicos.
     Retorne o texto em linguagem natural e com caracteres que possuem em um teclado comum, sem caracteres ou símbolos LaTex, para serem exibidos em uma interface de usuário com markdown.
-    Resuma o conteúdo de forma breve e objetiva. Retorne a mensagem direta, sem apresentações no início.
+    Resuma o conteúdo de forma breve e objetiva. Retorne a mensagem direta, sem apresentações no início ou no fim.
 
     ---
     Conteúdo do documento:
