@@ -19,14 +19,13 @@ from functions_and_documents.ProjetoRAG.functions import markdown
 from llama_index.llms.groq import Groq
 from llama_index.llms.openai import OpenAI
 from llama_index.core import Settings
-from llama_index.core.tools import ToolMetadata
-from llama_index.core.tools import QueryEngineTool
+from llama_index.core.tools import ToolMetadata, FunctionTool, QueryEngineTool
 from llama_index.experimental import PandasQueryEngine
 from llama_index.core.agent.workflow import FunctionAgent
-from llama_index.core.tools import FunctionTool
 
 # =================== Bibliotecas Adicionais ===========================
 import streamlit as st
+from streamlit_option_menu import option_menu
 import pandas as pd
 import tempfile
 import asyncio
@@ -43,38 +42,32 @@ load_dotenv()
 # ==================== Consulta em planilhas (Refinado) =========================
 def query_spreadsheet(query: str):
     """
-    Ferramenta Principal. Use para consultar o DataFrame carregado.
-    Se precisar extrair dados para gráficos, peça explicitamente os dados 
-    nesta query para depois passar para o save_json.
-    Não utilize SQL. Utilize somente comandos do Pandas para executar a consulta no DataFrame.    
+    Ferramenta para consultar o DataFrame.
     
-    **MUITO IMPORTANTE (O RESUMO ABAIXO É SEU MAIOR ALIADO) E O PANDAS (para consultas mais complexas):**
-    SEMPRE utilize o resumo retornado em 'Contexto do DataFrame' para conhecer a estrutura dos dados. O objetivo é minimizar as consultas à essa ferramenta.
-    Se precisar chamar o pandas explicitamente para alguma operação, NÃO SE ESQUEÇA DE IMPORTÁ-LO com 'import pandas as pd' na mesma consulta.
-    """    
-          
+    **Muito importante:**
+    JAMAIS use comandos como pd.to_datetime, pd.query ou qualquer outro comando que utilize bibliotecas externas ou um erro do tipo 'pd is not defined'. 
+    O pedido deve ser feito em linguagem natural, como se estivesse pedindo para um analista humano (ex:. {'query': 'Total de vendas da categoria Smartphone por mês'}).
+    """
     try:
-        # Metadados para dar contexto ao LLM
-        df_info = {
-            "columns": list(df.columns),
-            "dtypes": df.dtypes.astype(str).to_dict(),
-            "rows": len(df),
-            "sample": df.head(1).to_dict(orient="records"),
-            "agregate_info": {
-            "numerical_summary": df.describe().iloc[:, :5].to_dict(),         # Limita os resumos às 5 primeiras colunas para evitar sobrecarga de tokens
-            "categorical_summary": df.describe(include=["object", "category"]).iloc[:, :5].to_dict()
-            }
-        }
-
-
-        # Configuração verbose=True para depuração                
-        pandas_query_engine = PandasQueryEngine(df=df, llm=Settings.llm, verbose=True, 
-        use_async=False, timeout=None)
+        # Passamos a instrução explícita para o engine interno tentar retornar algo limpo
+        pandas_query_engine = PandasQueryEngine(
+            df=df, 
+            llm=Settings.llm, 
+            verbose=True, 
+            use_async=False, 
+            timeout=None
+        )
         
-        result = pandas_query_engine.query(query)
-        return f"Contexto do DataFrame: {df_info}\n--------\nResultado da Consulta:\n{str(result)}"
+        # Vital: Forçamos o PandasQueryEngine a formatar a saída de forma amigável
+        enhanced_query = f"{query}. Retorne os dados puros de forma clara."
+        result = pandas_query_engine.query(enhanced_query)
+        
+        # Retornamos APENAS o resultado da consulta para não confundir o agente
+        return f"Resultado da Consulta:\n{str(result)}"
     except Exception as e:
-        return f"Erro ao executar query no Pandas: {e}" 
+        # Só passamos o contexto se der erro, para o agente entender o que fez de errado
+        df_columns = list(df.columns)
+        return f"Erro na consulta: {e}. Lembre-se, as colunas disponíveis são: {df_columns}. Tente fazer a pergunta de outra forma." 
     
 
 # ==================== Configuração de Múltiplos Modelos com Fallback Inteligente =========================
@@ -90,7 +83,7 @@ def get_llm_with_fallback(temperature=0.15):
     for model in models:
         try:
             return Groq(model=model, temperature=temperature, api_key=os.getenv("GROQ_API_KEY"))
-            st.info(f"Usando modelo: {model}")
+            st.toast(f"Usando modelo: {model}")
         except Exception as e:
             st.write(f"Erro com {model}: {e}")
             continue
@@ -194,10 +187,10 @@ if uploaded_file: # Primeira interação
                 finally:
                     main_tool = FunctionTool.from_defaults(
                     fn=query_spreadsheet,
-                    description="FERRAMENTA PRINCIPAL. Use para acessar os dados do arquivo carregado (CSV/Excel). "
-                                "Use para responder perguntas de texto E TAMBÉM para buscar dados numéricos antes de criar gráficos." \
-                                "Use preferencialmente comandos do pandas ou queries com aspas duplas para consultar a tabela. " \
-                                "Do contrário um erro do tipo Failed to parse tool call arguments as JSON pode ser disparado")
+                    description=dedent("""FERRAMENTA PRINCIPAL PARA ACESSAR DADOS TABULARES (CSV/Excel).
+                        Passe a sua pergunta em LINGUAGEM NATURAL CLARA.
+                        Exemplos de uso correto: 'Qual o total de vendas por semana?' ou 'Liste as vendas agrupadas por mês'.
+                        NÃO passe códigos Python, Pandas ou SQL para esta ferramenta. Apenas faça o pedido em texto puro."""))
                     
                     
 
@@ -215,7 +208,7 @@ if uploaded_file: # Primeira interação
                 main_tool = FunctionTool.from_defaults(
                     fn=query_spreadsheet,
                     description="FERRAMENTA PRINCIPAL. Use para acessar os dados do arquivo carregado (CSV/Excel). "
-                                "Use para responder perguntas de texto E TAMBÉM para buscar dados numéricos antes de criar gráficos."
+                                "Use para responder perguntas de texto E TAMBÉM para buscar dados numéricos antes de criar gráficos.",
                     )
                 
             else: # Processa arquivo PDF
@@ -224,10 +217,12 @@ if uploaded_file: # Primeira interação
                 main_tool = QueryEngineTool(query_engine=index.as_query_engine(
                     similarity_top_k=7, llm=llm, verbose=True),
                     metadata=ToolMetadata(
-                        name="doc_search", description="FERRAMENTA PRINCIPAL. Use para acessar os dados do arquivo carregado (PDF). "
-                                    "Use para responder perguntas de texto E TAMBÉM para buscar dados numéricos antes de criar gráficos." \
-                                    "Para essa ferramenta com busca semântica você deve passar os dados brutos da pesquisa do usuário, sem utilizar códigos SQL ou Pandas."
-                    ))
+                        name="doc_search", description=dedent("""FERRAMENTA PRINCIPAL PARA ACESSAR DADOS EM PDF.
+                Use para responder perguntas de texto ou buscar dados financeiros/numéricos brutos.
+                Passe APENAS perguntas em linguagem natural clara (ex: 'Qual a receita no último trimestre?').
+                NÃO utilize códigos Python, Pandas ou SQL nesta ferramenta.
+                Se o usuário pedir algo genérico como 'Faça um relatório geral', use essa ferramenta com o termo 'query' para acessar os dados."""
+                    )))
             
             # Configuração das Ferramentas do Agente                            
             json_save_tool = FunctionTool.from_defaults(fn=save_json, description=("Use APENAS quando precisar gerar um gráfico. "
@@ -239,26 +234,24 @@ if uploaded_file: # Primeira interação
             graph_tool = FunctionTool.from_defaults(fn=generate_graphs, description="Use APÓS salvar o JSON. Cria visualizações (barra, linha, etc). "
                             "Argumentos obrigatórios: json_path (retornado pelo save_json), col_x, col_y.")
             
-            # --- SYSTEM PROMPT (INDISPENSÁVEL PARA AGENTES INTELIGENTES) ---
+            # --- SYSTEM PROMPT OTIMIZADO ---
             system_prompt = dedent("""
-            Você é um Assistente Financeiro Especialista, capaz de analisar dados e gerar gráficos e relatórios executivos de alto impacto para o negócio.
-            
-            REGRAS CRITICAS:
-            1. O usuário JÁ CARREGOU um arquivo de dados. Ele está disponível através da ferramenta 'query_spreadsheet' ou 'doc_search' (PARA PDFs). Use-a para acessar os dados.
-            2. Não se esqueça de escapar corretamente os caracteres, se necessário.
+            Você é um Assistente Financeiro Especialista, focado em analisar dados, gerar relatórios executivos e criar gráficos impactantes.
 
-            3. Se o usuário pedir um gráfico:
-            a. Primeiro, use 'query_spreadsheet' para extrair os dados necessários (ou para conhecê-los, se necessário).
-            b. Segundo, formate esses dados internamente e use 'save_json'.
-            c. Terceiro, use 'generate_graphs' com o caminho do arquivo salvo (NÃO ADICIONE DADOS ZERADOS, NEM NADA DO TIPO - Mantenha o gráfico útil, informativo e impactante).
-            d. As cores, títulos, gráficos e outras personalizações ficam a seu critério. Estilize de forma a manter o gráfico informativo e impactante. 
-            Use nomes descritivos e impactantes para o título e os eixos.
-            4. Responda sempre em Português do Brasil.
-            5. Se fizer sentido no contexto, retorne em sua resposta final uma conclusão com análises e recomendações relevantes para o negócio, 
-            sem menções a detalhes técnicos ou a campos específicos do conjunto de dados.
-            6. Limite as consultas à ferramenta de dados (query_spreadsheet ou doc_search) para o mínimo necessário. Use o resumo do DataFrame para acelerar seu entendimento dos dados e evitar consultas desnecessárias.
-            7. Se o usuário inserir perguntas sem detalhes objetivos (como compare receita e despesas), siga um plano padrão comum e útil para tomada de decisão (não pergunte que tipo de informação o usuário prefere).
-            8. O relatório final deve ser claro, objetivo e voltado para a tomada de decisão, destacando os insights mais relevantes encontrados nos dados.
+            REGRAS CRÍTICAS DE EXECUÇÃO:
+            1. EXPLORAÇÃO DE DADOS: O arquivo do usuário já está carregado. Use a ferramenta 'query_spreadsheet' (para planilhas) ou 'doc_search' (para PDFs) fazendo pedidos diretos em LINGUAGEM NATURAL (ex: "Traga a soma de receitas agrupada por semana"). Não escreva código para essas ferramentas.
+            2. CRIAÇÃO DE GRÁFICOS (Fluxo Obrigatório):
+            - Passo A: Peça os dados agrupados/filtrados necessários usando a ferramenta de busca de dados.
+            - Passo B: Analise o 'Resultado da Consulta' retornado (se houver dados vazios, como meses sem vendas não inclua na geração dos gráficos).
+            - Passo C: Formate esses dados recebidos rigorosamente como uma lista de dicionários (ex: [{"Mes": "2024-01", "Vendas": 1500}, ...]) e passe para a ferramenta 'save_json'. O nome do arquivo deve ser sempre "finantial_data.json".
+            - Passo D: Chame a ferramenta 'generate_graphs' utilizando o arquivo salvo.
+            3. PRECISÃO E VELOCIDADE:
+            - Se o usuário pedir visualizações semanais, mensais ou anuais, garanta que seu pedido em texto para a ferramenta de dados deixe isso explícito.
+            - Não invente, não presuma e não adicione dados zerados ou falsos.
+            - Faça apenas UMA consulta aos dados se for suficiente para responder à pergunta.
+            4. COMUNICAÇÃO:
+            - Responda sempre em Português do Brasil.
+            - Finalize sua resposta com uma breve conclusão executiva e recomendações baseadas exclusivamente nos dados encontrados, voltadas para a tomada de decisão.
             """)
             
             # Atribui as ferramentas ao Agente 
@@ -299,9 +292,23 @@ if uploaded_file: # Primeira interação
             st.write(str(st.session_state["summary"]).replace("<br>", "\n"))
             del st.session_state["summary"]
     
-    
-    # A barra de chat fica fixa embaixo
+        
     with chat_col:
+        selected = option_menu(
+            "Tipos de gráficos disponíveis",
+            ["Bar", "Line", "Scatter", "Gauge", "Donut", "Treemap"],
+            icons=["bar-chart", "graph-up", "scatter", "speedometer", "circle", "tree"],
+            menu_icon="cast",
+            default_index=0,
+            orientation="horizontal",
+                styles={
+                    "container": {"padding": "0!important", "background-color": "#0a0a0a"},
+                    "nav-link": {"font-size": "14px", "text-align": "center", "margin":"0 5px"},
+                    "nav-link-selected": {"background-color": "#008000"},
+                }
+        )
+
+        # A barra de chat fica fixa em cima
         query = st.chat_input("Faça uma pergunta sobre seus dados financeiros\
                                 \n(ex: Quais as maiores despesas)", key="chat_input_key")
         
@@ -335,7 +342,7 @@ if uploaded_file: # Primeira interação
                     
                     try:
                         time_before = time.time()
-                        status.update(label="⏳ Não se esqueça. Pergutas mais complexas podem demandar mais tempo de processamento.", state="running", expanded=True)
+                        status.update(label="⏳ Lembre-se. Pergutas mais complexas podem demandar mais tempo de processamento.", state="running", expanded=True)
                         response_text, agent_logs = run_query_safe(query_engine)                        
                         final_response = translate_content(response_text, source_lang="en", target_lang="pt") if translate_option else response_text
                         time_after = time.time()
@@ -360,7 +367,7 @@ if uploaded_file: # Primeira interação
                     
                     with tab2:
                         # Resposta Final do Modelo
-                        st.write(final_response)
+                        st.write(final_response.replace("$", "R\\$"))
                         
                     with tab3:
                         # Logs do Agente

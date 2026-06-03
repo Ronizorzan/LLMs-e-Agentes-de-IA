@@ -16,20 +16,39 @@ import asyncio
 # ======================= Bibliotecas Principais ======================
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings, SimpleDirectoryReader, VectorStoreIndex
+from llama_index.core.node_parser import SentenceSplitter
 from deep_translator import GoogleTranslator
 from llama_index.core.agent.workflow import AgentStream, ToolCallResult
+from llama_index.readers.file import PyMuPDFReader
 
 
-# ============================ Carregamento e indexação dos documentos em PDF =========================
+# ============================ Carregamento e indexação dos documentos em PDF (OTIMIZADO) =========================
+@st.cache_resource(show_spinner="Carregando modelo de embeddings e indexando documentos... Isso pode levar alguns minutos na primeira vez.")
+def get_embedding_model():
+    """Garante que o modelo de embeddings é carregado apenas uma vez, mesmo que a função de indexação seja chamada várias vezes."""
+    return HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
+
+
+@st.cache_resource(show_spinner="Quase lá! Carregando e indexando documentos....")
 def load_and_index_documents(file_path: str):
-    docs = SimpleDirectoryReader(input_files=[file_path]).load_data()
+    """
+    Carrega o PDF usando um parser otimizado e faz o cache do VectorStoreIndex.
+    Se o mesmo arquivo for carregado, ele pula essa etapa demorada.
+    """
+    # Usando o leitor do PyMuPDF, que é substancialmente mais rápido    
+    parser = PyMuPDFReader()
+    file_extractor = {".pdf": parser}
+    
+    docs = SimpleDirectoryReader(
+        input_files=[file_path], 
+        file_extractor=file_extractor
+    ).load_data()
 
-    embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
-    Settings.embed_model = embed_model
+    # Otimização 2: Chunking explícito para melhorar a velocidade da busca vetorial
+    Settings.text_splitter = SentenceSplitter(chunk_size=1024, chunk_overlap=100)
+    Settings.embed_model = get_embedding_model()
 
-    index = VectorStoreIndex.from_documents(
-        docs, embed_model=embed_model
-    )
+    index = VectorStoreIndex.from_documents(docs)
     return docs, index
 
 
@@ -124,8 +143,8 @@ def run_query_safe(query):
         loop = None
 
     if loop and loop.is_running():
-        # Já existe um loop ativo (ex.: Streamlit)
-        # Usa create_task + gather em vez de asyncio.run
+        # Já existe um loop ativo (Streamlit)
+        # Usa create_task + gather em vez de asyncio.run (Mais robusto para Streamlit)
         task = loop.create_task(run_agent(query))
         response_text, agent_logs = loop.run_until_complete(asyncio.gather(task))[0]
     else:
@@ -156,8 +175,7 @@ def save_json(data: Union[Dict, List[Dict]], file_path: Union[str, Path] = "fina
             json.dump(data, file, ensure_ascii=False, indent=4)
     except Exception as error:
         raise IOError(f"Erro ao salvar JSON: {str(error)}")
-    
-    # Removido st.toast daqui para evitar erros de thread, o agente retorna a string
+        
     return str(path_obj)
 
 
