@@ -48,6 +48,9 @@ def query_spreadsheet(query: str):
     JAMAIS use comandos como pd.to_datetime, pd.query ou qualquer outro comando que utilize bibliotecas externas ou um erro do tipo 'pd is not defined'. 
     O pedido deve ser feito em linguagem natural, como se estivesse pedindo para um analista humano (ex:. {'query': 'Total de vendas da categoria Smartphone por mês'}).
     """
+    # Checagem de importação indevida
+    if "pd." in query or "pandas" in query.lower():
+        return "Erro: Não utilize pandas diretamente. Reformule sua pergunta em linguagem natural."
     try:
         # Passamos a instrução explícita para o engine interno tentar retornar algo limpo
         pandas_query_engine = PandasQueryEngine(
@@ -59,7 +62,7 @@ def query_spreadsheet(query: str):
         )
         
         # Vital: Forçamos o PandasQueryEngine a formatar a saída de forma amigável
-        enhanced_query = f"{query}. Retorne os dados puros de forma clara."
+        enhanced_query = f"{query}. Retorne os dados puros de forma clara. Responda apenas com dados, SEM CÓDIGO, SEM PANDAS!"
         result = pandas_query_engine.query(enhanced_query)
         
         # Retornamos APENAS o resultado da consulta para não confundir o agente
@@ -67,7 +70,9 @@ def query_spreadsheet(query: str):
     except Exception as e:
         # Só passamos o contexto se der erro, para o agente entender o que fez de errado
         df_columns = list(df.columns)
-        return f"Erro na consulta: {e}. Lembre-se, as colunas disponíveis são: {df_columns}. Tente fazer a pergunta de outra forma." 
+        return f"""Erro na consulta: {e}. Lembre-se, as colunas disponíveis são: {df_columns}. Tente fazer a pergunta de outra forma.
+        **MUITO IMPORTANTE:** Não chame o pandas (ou pd) diretamente, caso contrário um erro 'pd is not defined' será retornado (Reforçando - NUNCA, JAMAIS CHAME pd.).        
+        """
     
 
 # ==================== Configuração de Múltiplos Modelos com Fallback Inteligente =========================
@@ -140,13 +145,13 @@ if model == "⚡ Groq (Velocidade insuperável)":
         st.error(str(e))
 
         # Fallback para OpenAI se o Groq estiver indisponível, garantindo que o app continue funcional mesmo em caso de falhas com o modelo principal
-        llm = OpenAI(model="gpt-4o-mini", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))        
+        llm = OpenAI(model="gpt-5-nano", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))        
     
     llm = get_llm_with_fallback(temperature=0.15)
             
 # Modelo Mistral como opção alternativa, caso o Groq esteja indisponível ou para comparação de resultados
 elif model == "🧠 OpenAI (Raciocínio Avançado)":
-    llm = OpenAI(model="gpt-5-nano", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))
+    llm = OpenAI(model="gpt-5-mini", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))
 
 # Seta o LLM escolhido globalmente
 Settings.llm = llm
@@ -271,11 +276,11 @@ if uploaded_file: # Primeira interação
                 st.session_state["summary"] = summary_docs(content[:15000])
             elif uploaded_file.name.endswith(".xlsx"):
                 if df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
-                    st.session_state.df = df.iloc[:, :5] # Mantém apenas as 5 primeiras colunas para o resumo                                    
+                    st.session_state.df = df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo                                    
                 st.session_state["summary"] = summary_docs(st.session_state.df.head(100)[:10000])
             elif uploaded_file.name.endswith("csv"):
                 if df.columns.size > 10: # Se tiver muitas colunas, gera o resumo somente com as 10 primeiras para evitar sobrecarga de tokens
-                    st.session_state.df = df.iloc[:, :5] # Mantém apenas as 5 primeiras colunas para o resumo
+                    st.session_state.df = df.iloc[:, :10] # Mantém apenas as 10 primeiras colunas para o resumo
                 st.session_state["summary"] = summary_docs(st.session_state.df.head(100)[:10000])
                 
                            
@@ -346,7 +351,7 @@ if uploaded_file: # Primeira interação
                         response_text, agent_logs = run_query_safe(query_engine)                        
                         final_response = translate_content(response_text, source_lang="en", target_lang="pt") if translate_option else response_text
                         time_after = time.time()
-                        st.toast(f"O Agente pensou por: {round(time_after - time_before, 2)} segundos\nObrigado por aguardar!", icon="⏱️", duration="long")
+                        st.toast(f"O Agente pensou por: {round(time_after - time_before, 2)} segundos!", icon="⏱️", duration="long")
                         status.update(label="✅ Análise concluída!", state="complete", expanded=False)
                         
                     except Exception as e:
