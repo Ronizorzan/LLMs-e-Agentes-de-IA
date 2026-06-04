@@ -21,3 +21,6 @@ pdm.lock
 *.pdf
 *.json
 *.md
+
+# Test files
+teste_import.py

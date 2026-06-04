@@ -1,25 +1,36 @@
+# --- Tradução e Utilitários ---
 deep-translator>=1.11.4
+python-dotenv
+pandas
+openpyxl
+pymupdf
+frontend
+
+# --- Interface e Gráficos ---
+streamlit>=1.56.0
+streamlit-option-menu
+plotly>=6.7.0
+polars
+
+# --- LangChain Ecosystem ---
 langchain
 langchain-community
 langchain-qdrant
 langchain-openai
 langchain-huggingface
+langchain-mistralai==1.1.4
+
+# --- LlamaIndex Core (Ambas travadas rigorosamente na mesma versão) ---
 llama-index
+llama-index-core.ve 
+
+# --- LlamaIndex Plugins & Integrations (Travados para evitar conflito com v0.14.22) ---
 llama-index-embeddings-huggingface
-huggingface-hub
 llama-index-llms-groq
 llama-index-llms-cohere
 llama-index-llms-openai
 llama-index-experimental
-pandas
-openpyxl
-fitz
-pymupdf
-frontend
-python-dotenv
-plotly>=6.7.0
-polars
-streamlit>=1.56.0
-streamlit-option-menu
+
+# --- Provedores de API e Bancos de Vetores ---
+huggingface-hub
 mistralai==2.4.8
-langchain-mistralai==1.1.4

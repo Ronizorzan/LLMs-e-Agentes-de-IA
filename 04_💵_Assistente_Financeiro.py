@@ -28,6 +28,7 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 import pandas as pd
 import tempfile
+import duckdb
 import asyncio
 import traceback
 import time
@@ -39,41 +40,57 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# ==================== Consulta em planilhas (Refinado) =========================
-def query_spreadsheet(query: str):
+def ask_data_assistant(query: str) -> str:
+    """Consulta os dados operacionais da empresa usando linguagem natural.
+    Exemplo de uso: 'Mostre as vendas mensais agrupadas por mês.'
     """
-    Ferramenta para consultar o DataFrame.
     
-    **Muito importante:**
-    JAMAIS use comandos como pd.to_datetime, pd.query ou qualquer outro comando que utilize bibliotecas externas ou um erro do tipo 'pd is not defined'. 
-    O pedido deve ser feito em linguagem natural, como se estivesse pedindo para um analista humano (ex:. {'query': 'Total de vendas da categoria Smartphone por mês'}).
-    """
-    # Checagem de importação indevida
-    if "pd." in query or "pandas" in query.lower():
-        return "Erro: Não utilize pandas diretamente. Reformule sua pergunta em linguagem natural."
+    # 1. Blindagem de inputs maliciosos de código (Mantido)
+    input_limpo = query.lower()
+    sequestradores = ["drop", "delete", "alter", "update", "insert", "exec", "eval"]
+    if any(comando in input_limpo for comando in sequestradores):
+        return "Erro de segurança: Comandos de modificação de dados não são permitidos."
+    
+    # 2. Mapeamento Dinâmico de Tipos (A Mágica acontece aqui)
+    # Pegamos as colunas e os tipos exatos que o Pandas está usando
+    schema_info = "\n".join([f"- Coluna '{col}': Tipo {dtype}" for col, dtype in df.dtypes.items()])
+    
+    prompt_sistema = dedent(f"""\
+        Você é um tradutor especialista de linguagem natural para SQL (dialeto DuckDB).
+        A tabela disponível se chama 'df' e possui o seguinte esquema dinâmico:
+        
+        {schema_info}
+        
+        REGRAS ESTRITAS E CRÍTICAS:
+        1. Responda APENAS com o código SQL executável puro. Nunca adicione explicações, blocos de código com ```sql, ou formatação de texto.
+        2. Use apenas comandos SELECT de leitura.
+        3. TRATAMENTO DE DATAS (CRÍTICO): Se a coluna de data estiver mapeada como 'object' (que o DuckDB lê como VARCHAR), 
+           você DEVE usar TRY_CAST("nome_da_coluna" AS DATE) antes de fazer qualquer agrupamento, como date_trunc('week', ...).
+        4. Evite usar palavras reservadas sem aspas duplas se os nomes das colunas tiverem espaços.
+        
+        Pergunta do usuário: {query}
+        SQL Puro:
+    """)
+    
     try:
-        # Passamos a instrução explícita para o engine interno tentar retornar algo limpo
-        pandas_query_engine = PandasQueryEngine(
-            df=df, 
-            llm=Settings.llm, 
-            verbose=True, 
-            use_async=False, 
-            timeout=None
-        )
+        # 3. Geração do SQL
+        resposta_llm = Settings.llm.complete(prompt_sistema).text.strip()
         
-        # Vital: Forçamos o PandasQueryEngine a formatar a saída de forma amigável
-        enhanced_query = f"{query}. Retorne os dados puros de forma clara. Responda apenas com dados, SEM CÓDIGO, SEM PANDAS!"
-        result = pandas_query_engine.query(enhanced_query)
+        # Limpeza agressiva para garantir que o SQL possa ser executado
+        sql_gerado = resposta_llm.replace("```sql", "").replace("```", "").strip()
         
-        # Retornamos APENAS o resultado da consulta para não confundir o agente
-        return f"Resultado da Consulta:\n{str(result)}"
+        # 4. Execução no DuckDB
+        resultado_db = duckdb.query(sql_gerado).to_df()
+        
+        # Formatação de saída limpa para o Agente principal ler facilmente
+        return f"Resultado da Consulta (Tabela df):\n{resultado_db.to_string(index=False)}"
+        
+    except duckdb.Error as db_err:
+        # Se o DuckDB falhar, retornamos o erro exato para o Agente tentar de novo (Auto-Correção)
+        return f"Erro no banco de dados ao executar: {sql_gerado}. O erro foi: {str(db_err)}. Ajuste a sintaxe SQL e tente novamente."
     except Exception as e:
-        # Só passamos o contexto se der erro, para o agente entender o que fez de errado
-        df_columns = list(df.columns)
-        return f"""Erro na consulta: {e}. Lembre-se, as colunas disponíveis são: {df_columns}. Tente fazer a pergunta de outra forma.
-        **MUITO IMPORTANTE:** Não chame o pandas (ou pd) diretamente, caso contrário um erro 'pd is not defined' será retornado (Reforçando - NUNCA, JAMAIS CHAME pd.).        
-        """
-    
+        return f"Erro de processamento: {str(e)}"
+
 
 # ==================== Configuração de Múltiplos Modelos com Fallback Inteligente =========================
 models = [
@@ -87,8 +104,8 @@ models = [
 def get_llm_with_fallback(temperature=0.15):
     for model in models:
         try:
-            return Groq(model=model, temperature=temperature, api_key=os.getenv("GROQ_API_KEY"))
-            st.toast(f"Usando modelo: {model}")
+            groq_model =  Groq(model=model, temperature=temperature, api_key=os.getenv("GROQ_API_KEY"))            
+            return groq_model
         except Exception as e:
             st.write(f"Erro com {model}: {e}")
             continue
@@ -113,7 +130,7 @@ with st.sidebar:
                                 type=["pdf", "csv", "xlsx"], accept_multiple_files=False) # Botão de Upload fixo na Barra Lateral
     with st.expander("**🔧 Seleção da IA**"):
         model = st.selectbox("🔍 Selecione o Provedor do LLM", 
-                             ["🧠 OpenAI (Raciocínio Avançado)", "⚡ Groq (Velocidade insuperável)"], index=0)
+                             ["🧠 OpenAI (Raciocínio Avançado)", "⚡ Groq (Velocidade insuperável)"], index=1)
 
     with st.expander("**Contato e Assistência**", expanded=False, icon="✉️"):
         st.markdown(markdown, unsafe_allow_html=True)
@@ -145,13 +162,13 @@ if model == "⚡ Groq (Velocidade insuperável)":
         st.error(str(e))
 
         # Fallback para OpenAI se o Groq estiver indisponível, garantindo que o app continue funcional mesmo em caso de falhas com o modelo principal
-        llm = OpenAI(model="gpt-5-nano", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))        
+        llm = OpenAI(model="gpt-4o-mini", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))        
     
     llm = get_llm_with_fallback(temperature=0.15)
             
 # Modelo Mistral como opção alternativa, caso o Groq esteja indisponível ou para comparação de resultados
 elif model == "🧠 OpenAI (Raciocínio Avançado)":
-    llm = OpenAI(model="gpt-5-mini", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))
+    llm = OpenAI(model="gpt-5-nano", temperature=0.15, api_key=os.getenv("OPENAI_API_KEY"))
 
 # Seta o LLM escolhido globalmente
 Settings.llm = llm
@@ -189,14 +206,25 @@ if uploaded_file: # Primeira interação
                     date_col = difflib.get_close_matches(target, columns, n=1, cutoff=0)[0]                    
                     st.session_state.df[date_col] = pd.to_datetime(st.session_state.df[date_col], errors='coerce', format="mixed")
 
-                finally:
+                finally:                    
+                    # ==================== Configuração da Ferramenta =========================
                     main_tool = FunctionTool.from_defaults(
-                    fn=query_spreadsheet,
-                    description=dedent("""FERRAMENTA PRINCIPAL PARA ACESSAR DADOS TABULARES (CSV/Excel).
-                        Passe a sua pergunta em LINGUAGEM NATURAL CLARA.
-                        Exemplos de uso correto: 'Qual o total de vendas por semana?' ou 'Liste as vendas agrupadas por mês'.
-                        NÃO passe códigos Python, Pandas ou SQL para esta ferramenta. Apenas faça o pedido em texto puro."""))
-                    
+                        fn=ask_data_assistant,
+                        name="ask_data_assistant",  # Forçamos um nome amigável para o agente
+                        description=dedent("""
+                            FERRAMENTA PARA BUSCAR DADOS DA PLANILHA.
+                            Envie sua solicitação EXCLUSIVAMENTE em linguagem natural estruturada.
+                            
+                            EXEMPLOS OBRIGATÓRIOS DE COMO VOCÊ DEVE ENVIAR A QUERY:
+                            - "Qual o total de vendas por mês?"
+                            - "Agrupe as receitas por semana."
+                            - "Filtre as vendas onde a categoria é Smartphone."
+                            - "Mostre os 10 melhores meses de vendas"
+                            
+                            O sistema interpreta texto puro automaticamente.
+                            Ao receber o Resultado da consulta, pule para a próxima etapa (finalização ou geração do gráfico).
+                        """)
+                    )
                     
 
             elif uploaded_file.name.endswith(".xlsx"): # Processa arquivo Excel
@@ -211,7 +239,7 @@ if uploaded_file: # Primeira interação
                             df[col] = pd.to_datetime(df[col], errors="coerce")
                     
                 main_tool = FunctionTool.from_defaults(
-                    fn=query_spreadsheet,
+                    fn=ask_data_assistant, name="ask_data_assistant",
                     description="FERRAMENTA PRINCIPAL. Use para acessar os dados do arquivo carregado (CSV/Excel). "
                                 "Use para responder perguntas de texto E TAMBÉM para buscar dados numéricos antes de criar gráficos.",
                     )
@@ -241,22 +269,29 @@ if uploaded_file: # Primeira interação
             
             # --- SYSTEM PROMPT OTIMIZADO ---
             system_prompt = dedent("""
-            Você é um Assistente Financeiro Especialista, focado em analisar dados, gerar relatórios executivos e criar gráficos impactantes.
+            Você é um Assistente Financeiro Especialista altamente capacitado.
+            Sua especialidade é analisar dados financeiros, gerar relatórios executivos e apresentar informações e recomendações focados em clareza e impacto para o negócio.
 
             REGRAS CRÍTICAS DE EXECUÇÃO:
-            1. EXPLORAÇÃO DE DADOS: O arquivo do usuário já está carregado. Use a ferramenta 'query_spreadsheet' (para planilhas) ou 'doc_search' (para PDFs) fazendo pedidos diretos em LINGUAGEM NATURAL (ex: "Traga a soma de receitas agrupada por semana"). Não escreva código para essas ferramentas.
+            1. EXPLORAÇÃO DE DADOS: O arquivo do usuário já está carregado. Use a ferramenta 'ask_data_assistant' (para planilhas) ou 'doc_search' (para PDFs)
+                                    fazendo pedidos diretos em LINGUAGEM NATURAL (ex: "Traga a soma de receitas agrupada por semana").
+            Após receber o resultado da consulta você deve passar para a próxima etapa 'save_json', ou formatar a resposta final.
+                                   
             2. CRIAÇÃO DE GRÁFICOS (Fluxo Obrigatório):
             - Passo A: Peça os dados agrupados/filtrados necessários usando a ferramenta de busca de dados.
             - Passo B: Analise o 'Resultado da Consulta' retornado (se houver dados vazios, como meses sem vendas não inclua na geração dos gráficos).
-            - Passo C: Formate esses dados recebidos rigorosamente como uma lista de dicionários (ex: [{"Mes": "2024-01", "Vendas": 1500}, ...]) e passe para a ferramenta 'save_json'. O nome do arquivo deve ser sempre "finantial_data.json".
+            - Passo C: Formate esses dados recebidos rigorosamente como uma lista de dicionários (ex: [{"Mes": "2024-01", "Vendas": 1500}, ...]) 
+                                   e passe para a ferramenta 'save_json'. O nome do arquivo deve ser sempre "finantial_data.json".
             - Passo D: Chame a ferramenta 'generate_graphs' utilizando o arquivo salvo.
+            
             3. PRECISÃO E VELOCIDADE:
             - Se o usuário pedir visualizações semanais, mensais ou anuais, garanta que seu pedido em texto para a ferramenta de dados deixe isso explícito.
             - Não invente, não presuma e não adicione dados zerados ou falsos.
             - Faça apenas UMA consulta aos dados se for suficiente para responder à pergunta.
+            
             4. COMUNICAÇÃO:
             - Responda sempre em Português do Brasil.
-            - Finalize sua resposta com uma breve conclusão executiva e recomendações baseadas exclusivamente nos dados encontrados, voltadas para a tomada de decisão.
+            - Finalize sua resposta com uma breve conclusão executiva clara e recomendações baseadas exclusivamente nos dados encontrados, voltadas para a tomada de decisão.
             """)
             
             # Atribui as ferramentas ao Agente 
