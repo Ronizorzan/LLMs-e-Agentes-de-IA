@@ -22,7 +22,7 @@ langchain-mistralai==1.1.4
 
 # --- LlamaIndex Core (Ambas travadas rigorosamente na mesma versão) ---
 llama-index
-llama-index-core.ve 
+llama-index-core
 
 # --- LlamaIndex Plugins & Integrations (Travados para evitar conflito com v0.14.22) ---
 llama-index-embeddings-huggingface
